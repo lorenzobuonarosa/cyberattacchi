@@ -25,7 +25,6 @@
   .tot.zero { font-weight: 400; fill: var(--ink-2); }
   .tot.hl { fill: var(--red); font-weight: 700; }
   .yr { font-size: 12px; font-weight: 700; fill: var(--ink); }
-  .col-box { fill: none; stroke: var(--ink); stroke-width: 1; }
   .sw.p1 { background: var(--blue-2); } .sw.p2 { background: var(--blue-3); } .sw.p3 { background: var(--blue-5); }
   .sw.r { background: var(--red-2); }
 </style>
@@ -62,9 +61,6 @@
   var HL = "Manifatturiero";
   var SHORT = { "Telecomunicazioni": "Telecom.", "Manifatturiero": "Manifattur.", "Servizi finanziari": "Serv. finanz." };
   var LETTER = ["G", "F", "M", "A", "M", "G", "L", "A", "S", "O", "N", "D"];
-  var ANN_COL = { mese: "2026-01", text: "Da gennaio 2026 la direttiva europea NIS2 obbliga migliaia di imprese a notificare gli incidenti: una parte dello spostamento dipende da questo" };
-  var ANN_ROW = { settore: "PA centrale", text: "Nel 2025 quasi sempre nei primi tre, colpita soprattutto dagli attacchi DDoS hacktivisti" };
-
   R.loadCSV("../data/settori.csv").then(function (rows) {
     var data = rows.map(function (r) {
       return { key: r.mese, date: parse(r.mese), settore: r.settore, pos: R.num(r.posizione), nota: r.nota || "" };
@@ -108,26 +104,15 @@
           sectors.find(function (s) { return s.name === "PA centrale"; }).tot[years[1]] + " nel " + years[1] + ".");
       svg.append("title").text("I tre settori con più vittime di attacchi informatici in Italia, mese per mese");
 
-      // ---- annotazione sulla colonna di gennaio 2026: testo in alto ----
-      var an = svg.append("g").attr("class", "anno");
-      var ci = months.findIndex(function (m) { return m.key === ANN_COL.mese; });
-      var cx0 = colX(ci);
-      var t1 = an.append("text").attr("x", 0).attr("y", 0).text(ANN_COL.text).call(R.wrap, narrow ? W - 4 : Math.min(cx0 + cw - 4, 420));
-      var b1 = t1.node().getBBox();
-      var t1x = narrow ? 0 : Math.max(0, cx0 + cw - b1.width);
-      t1.attr("transform", "translate(" + t1x + "," + (-b1.y) + ")");
-      var annH = Math.ceil(b1.height) + 14;
-
       var headH = 18 + 18;  // anni + mesi
-      var top = annH + headH;
+      var top = headH;
       var g = svg.append("g").attr("transform", "translate(0," + top + ")");
 
       // anni
-      var hd = svg.append("g").attr("transform", "translate(0," + (annH + 12) + ")");
+      var hd = svg.append("g").attr("transform", "translate(0,12)");
       years.forEach(function (y) {
         var idx = months.map(function (m, i) { return m.year === y ? i : -1; }).filter(function (i) { return i >= 0; });
         var x0 = colX(idx[0]), x1 = colX(idx[idx.length - 1]) + cw;
-        var mid = y === years[1] ? (x0 + x1) / 2 + cw : x0;   // il 2026 non sotto la linea dell'annotazione
         hd.append("text").attr("class", "yr").attr("x", y === years[1] ? (x0 + x1) / 2 : x0).attr("text-anchor", y === years[1] ? "middle" : "start").text(y);
         hd.append("line").attr("x1", x0).attr("x2", x1 - pad).attr("y1", 5).attr("y2", 5).style("stroke", "var(--ink)").attr("stroke-width", 1);
       });
@@ -183,36 +168,7 @@
         });
       });
 
-      // ---- annotazione 1: riquadro sulla colonna e linea fino al testo ----
-      var boxTop = -18;
-      g.append("rect").attr("class", "col-box").attr("x", cx0 - 2).attr("y", boxTop).attr("width", cw - pad + 4).attr("height", gridH - pad + 2 - boxTop);
-      var lx = cx0 + (cw - pad) / 2;
-      an.append("line").attr("x1", lx).attr("x2", lx).attr("y1", b1.height + 4).attr("y2", top + boxTop);
-
-      // ---- annotazione 2: riga PA centrale, testo sotto la griglia ----
-      var ri = sectors.findIndex(function (s) { return s.name === ANN_ROW.settore; });
-      // colonna del 2025 in cui la PA centrale è nei primi tre e tutte le righe sotto sono vuote
-      var colA = -1;
-      for (var c = months.length - 1; c >= 0; c--) {
-        if (months[c].year !== years[0] || !cellOf.get(months[c].key + "|" + ANN_ROW.settore)) continue;
-        var free = sectors.slice(ri + 1).every(function (s) { return !cellOf.get(months[c].key + "|" + s.name); });
-        if (free) { colA = c; break; }
-      }
-      var a2 = g.append("g").attr("class", "anno");
-      var t2y = gridH + 22;
-      var t2 = a2.append("text").attr("x", labW).attr("y", t2y).text(ANN_ROW.text).call(R.wrap, narrow ? W - labW : Math.min(colX(colA) - labW + 160, 330));
-      var b2 = t2.node().getBBox();
-      if (colA >= 0) {
-        var ax = colX(colA) + (cw - pad) / 2;
-        a2.append("line").attr("x1", ax).attr("x2", ax).attr("y1", t2y - 14).attr("y2", ri * ch + ch - pad + 3);
-        a2.append("circle").attr("cx", ax).attr("cy", ri * ch + ch - pad + 3).attr("r", 1.75);
-        // il testo comincia sotto la linea, a sinistra
-        if (!narrow) t2.selectAll("tspan").attr("x", Math.max(labW, ax - 40));
-      }
-      var totalH = top + t2y + b2.height + 4;
-      svg.attr("height", Math.ceil(totalH));
-      R.enter(an, phase, function (s) { s.style("opacity", 0); }, function (s) { s.style("opacity", 1); }, R.DUR * 0.9);
-      R.enter(a2, phase, function (s) { s.style("opacity", 0); }, function (s) { s.style("opacity", 1); }, R.DUR * 0.9);
+      svg.attr("height", top + gridH + 2);
 
       // ---- interazione ----
       clear = function () { cg.classed("is-dimmed", false); };

@@ -37,7 +37,7 @@ Ogni snippet è l'iframe seguito dallo script di `assets/embed.min.js` (inline, 
 <iframe src="https://lorenzobuonarosa.github.io/cyberattacchi/paesi-colpiti/" width="100%" height="790" frameborder="0" scrolling="no" title="L'Italia è il settimo Paese più colpito al mondo e il terzo in Europa"></iframe>
 <iframe src="https://lorenzobuonarosa.github.io/cyberattacchi/ddos/" width="100%" height="670" frameborder="0" scrolling="no" title="Gli attacchi DDoS degli hacktivisti fanno sempre meno danni"></iframe>
 <iframe src="https://lorenzobuonarosa.github.io/cyberattacchi/attacchi-italia/" width="100%" height="500" frameborder="0" scrolling="no" title="Ospedali, Comuni e fornitori fermi per settimane"></iframe>
-<iframe src="https://lorenzobuonarosa.github.io/cyberattacchi/settori/" width="100%" height="710" frameborder="0" scrolling="no" title="Gli attacchi si spostano dalla pubblica amministrazione alle imprese"></iframe>
+<iframe src="https://lorenzobuonarosa.github.io/cyberattacchi/settori/" width="100%" height="580" frameborder="0" scrolling="no" title="Gli attacchi si spostano dalla pubblica amministrazione alle imprese"></iframe>
 ```
 
 Anteprime senza CMS: `?bg=grigio`, `?bg=bianco`, `?bg=nero`, `?bg=notte` nell'URL forzano lo sfondo (e il tema).
