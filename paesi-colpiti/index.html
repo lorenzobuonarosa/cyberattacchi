@@ -111,7 +111,7 @@
     function computeAll(W) {
       var narrow = R.isNarrow(W);
       var H = narrow ? 420 : 470;
-      var top = narrow ? 58 : 44;   // spazio per l'annotazione sugli Stati Uniti
+      var top = 0;
       var sumW = d3.sum(VIEWS.mondo, function (d) { return d.n; });
       var sumU = d3.sum(VIEWS.ue, function (d) { return d.n; });
       // in ogni vista l'area è proporzionale agli attacchi; la vista Ue usa una scala più grande
@@ -121,7 +121,7 @@
         lay: { mondo: layout(VIEWS.mondo, W, H, k, top), ue: layout(VIEWS.ue, W, H, kU, 0) } };
     }
 
-    var svg, gB, gL, an;
+    var svg, gB, gL;
     function render(phase, animateView) {
       var W = state.W, H = state.H, lay = state.lay[view], list = VIEWS[view];
       var dur = animateView && !R.reduced ? R.DUR : 0;
@@ -172,24 +172,6 @@
       else if (labDelay) gL.style("opacity", 0).transition().delay(labDelay).duration(250).style("opacity", 1);
       else gL.style("opacity", 1);
 
-      // annotazione sugli Stati Uniti (solo vista Mondo)
-      an.selectAll("*").remove();
-      if (view === "mondo") {
-        var u = lay[usa.paese];
-        var ax = u.x, ay = u.y - u.r;
-        var right = ax < W / 2;
-        var t = an.append("text").attr("x", 0).attr("y", 13)
-          .text("Gli Stati Uniti da soli raccolgono " + fmt(usa.n, 0) + " attacchi")
-          .call(R.wrap, state.narrow ? 190 : 330);
-        var bb = t.node().getBBox();
-        var tx = Math.max(0, Math.min(W - bb.width, ax - 10));
-        t.attr("transform", "translate(" + tx + ",0)");
-        an.append("line").attr("x1", ax).attr("x2", ax).attr("y1", bb.y + bb.height + 4).attr("y2", ay - 2);
-        an.append("circle").attr("cx", ax).attr("cy", ay - 2).attr("r", 1.75);
-        if (phase === "pre") an.style("opacity", 0);
-        else an.style("opacity", 0).transition().delay(phase === "play" ? R.DUR * 0.8 : dur * 0.85).duration(250).style("opacity", 1);
-      }
-
       // interazione
       clear = function () { gB.selectAll("circle").classed("is-dimmed", false); };
       gB.selectAll("circle")
@@ -207,7 +189,6 @@
       d3.select(host).select("svg").remove();
       svg = d3.select(host).insert("svg", ".r-tip").attr("width", W).attr("height", state.H).attr("role", "img");
       svg.append("title").text("Attacchi informatici a sfondo politico subiti dal 2023, per Paese");
-      an = svg.append("g").attr("class", "anno");
       gB = svg.append("g");
       gL = svg.append("g");
       render(phase, false);
