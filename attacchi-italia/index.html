@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gli attacchi che hanno fatto danni in Italia – Radar QN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,700&display=swap">
+<link rel="stylesheet" href="../assets/radar.css">
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="../assets/radar.js"></script>
+<style>
+  .deck { position: relative; margin-top: 24px; outline: none; }
+  .deck:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
+  /* tutte le schede nella stessa cella: l'altezza è sempre quella della più alta */
+  .track { display: grid; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  .slide {
+    grid-area: 1 / 1;
+    display: flex; flex-direction: column;
+    border-top: 2px solid var(--ink);
+    padding: 16px 0 4px;
+    opacity: 0; visibility: hidden;
+    transform: translateX(24px);
+    transition: opacity 320ms ease, transform 320ms cubic-bezier(.2,.7,.2,1), visibility 0s linear 320ms;
+  }
+  .slide.is-before { transform: translateX(-24px); }
+  .slide.is-on { opacity: 1; visibility: visible; transform: none; transition: opacity 320ms ease, transform 320ms cubic-bezier(.2,.7,.2,1), visibility 0s; }
+  .s-date { font-size: 13px; color: var(--ink-2); margin: 0 0 6px; font-variant-numeric: tabular-nums; }
+  .s-ente { font-family: var(--serif); font-weight: 700; font-size: clamp(22px, 5vw, 27px); line-height: 1.12; margin: 0 0 12px; color: var(--title); text-wrap: balance; }
+  .s-tag { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; }
+  .s-tag span {
+    font-size: 12px; font-weight: 600; line-height: 1; padding: 5px 8px 6px; border-radius: 2px;
+    background: var(--grey-5); color: var(--ink);
+  }
+  .s-tag span.is-type { background: var(--blue); color: var(--on-dark); }
+  .s-cons { font-size: 18px; line-height: 1.45; margin: 0 0 20px; }
+  .s-cons mark {
+    color: inherit; font-weight: 700;
+    background: linear-gradient(transparent 58%, var(--red-5) 58%);
+    padding: 0 1px;
+  }
+  .s-src { margin-top: auto; font-size: 12px; color: var(--ink-2); }
+  .cover { justify-content: center; }
+  .cover .r-big { margin: 0 0 14px; }
+  .cover p.c-text { font-size: 16px; line-height: 1.45; margin: 0 0 22px; max-width: 520px; }
+  .cover .c-go {
+    align-self: flex-start; display: inline-flex; align-items: center; gap: 8px;
+    font: 600 14px/1 var(--sans); color: var(--on-dark); background: var(--blue);
+    border: 0; border-radius: 999px; padding: 10px 16px; cursor: pointer;
+  }
+  .nav { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+  .nav button.arr {
+    flex: none; width: 38px; height: 38px; border-radius: 50%;
+    border: 1px solid var(--rule); background: var(--bg); color: var(--ink);
+    display: grid; place-items: center; cursor: pointer; padding: 0;
+  }
+  .nav button.arr:disabled { opacity: .35; cursor: default; }
+  .nav button.arr:focus-visible, .dots button:focus-visible, .c-go:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .dots { flex: 1; display: flex; justify-content: center; flex-wrap: wrap; gap: 0; min-width: 0; }
+  .dots button { width: 18px; height: 24px; border: 0; background: none; padding: 0; cursor: pointer; display: grid; place-items: center; }
+  .dots button i { display: block; width: 8px; height: 8px; border-radius: 50%; background: var(--grey-4); transition: background 200ms, transform 200ms; }
+  .dots button[aria-current="true"] i { background: var(--red); transform: scale(1.25); }
+  .count { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; min-width: 36px; text-align: right; }
+  @media (prefers-reduced-motion: reduce) { .slide, .slide.is-on { transition: none; } }
+</style>
+</head>
+<body>
+<main class="radar">
+  <header>
+    <h1 class="r-title">Ospedali, Comuni e fornitori fermi per settimane</h1>
+    <p class="r-sub">Alcuni degli attacchi informatici con le conseguenze più pesanti in Italia, 2023-2026</p>
+  </header>
+
+  <section class="deck" id="deck" tabindex="0" aria-roledescription="carosello" aria-label="Attacchi informatici in Italia, schede da sfogliare">
+    <div class="track" id="track" aria-live="polite"></div>
+    <div class="nav">
+      <button type="button" class="arr" id="prev" aria-label="Scheda precedente">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="dots" id="dots" role="tablist" aria-label="Scegli la scheda"></div>
+      <span class="count" id="count"></span>
+      <button type="button" class="arr" id="next" aria-label="Scheda successiva">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <footer class="r-foot">
+    <span>Fonte: EuRepoC; ACN, Operational Summary mensili</span>
+    <span>Elaborazione Radar – QN</span>
+  </footer>
+</main>
+
+<script>
+(function () {
+  var R = Radar, fmt = R.fmt;
+  var parse = d3.timeParse("%Y-%m");
+  var monthLong = R.timeLocale.format("%B %Y");
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function esc(s) { return String(s || "").replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function highlight(text, ev) {
+    var i = ev ? text.toLowerCase().indexOf(ev.toLowerCase()) : -1;
+    if (i < 0) return esc(text);
+    return esc(text.slice(0, i)) + "<mark>" + esc(text.slice(i, i + ev.length)) + "</mark>" + esc(text.slice(i + ev.length));
+  }
+
+  R.loadCSV("../data/attacchi-italia.csv").then(function (rows) {
+    var data = rows.map(function (r) {
+      return { date: parse(r.data), ente: r.ente, tipo: r.tipo, gruppo: r.gruppo, cons: r.conseguenza, ev: r.evidenza, fonte: r.fonte };
+    }).filter(function (d) { return d.date && d.ente; }).sort(function (a, b) { return a.date - b.date; });
+
+    var track = d3.select("#track");
+    var first = data[0], last = data[data.length - 1];
+
+    // copertina
+    var cover = track.append("article").attr("class", "slide cover").attr("aria-roledescription", "scheda")
+      .attr("aria-label", "Introduzione");
+    cover.append("div").attr("class", "r-big").html(
+      '<span class="r-big__num">' + fmt(data.length, 0) + '</span><span class="r-big__label">attacchi informatici, da ' +
+      monthLong(first.date) + " a " + monthLong(last.date) + "</span>");
+    cover.append("p").attr("class", "c-text").text("Ransomware che bloccano gli ospedali, fornitori colpiti che trascinano con sé decine di clienti, Comuni senza servizi per settimane. Una scheda per ogni caso.");
+    cover.append("button").attr("type", "button").attr("class", "c-go")
+      .html('Scorri <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>')
+      .on("click", function () { go(1); });
+
+    data.forEach(function (d, i) {
+      var s = track.append("article").attr("class", "slide").attr("aria-roledescription", "scheda")
+        .attr("aria-label", (i + 1) + " di " + data.length + ": " + d.ente);
+      s.append("p").attr("class", "s-date").text(cap(monthLong(d.date)));
+      s.append("h2").attr("class", "s-ente").text(d.ente);
+      var tag = s.append("div").attr("class", "s-tag");
+      tag.append("span").attr("class", "is-type").text(d.tipo);
+      if (d.gruppo) tag.append("span").text("Rivendicato da " + d.gruppo);
+      s.append("p").attr("class", "s-cons").html(highlight(d.cons, d.ev));
+      s.append("p").attr("class", "s-src").text("Fonte: " + d.fonte);
+    });
+
+    var slides = track.selectAll(".slide").nodes();
+    var N = slides.length, cur = 0;
+    var dots = d3.select("#dots").selectAll("button").data(slides).join("button")
+      .attr("type", "button").attr("role", "tab")
+      .attr("aria-label", function (s, i) { return i === 0 ? "Introduzione" : "Scheda " + i + ": " + data[i - 1].ente; })
+      .on("click", function (ev, s) { go(slides.indexOf(s)); });
+    dots.append("i");
+
+    function go(i) {
+      i = Math.max(0, Math.min(N - 1, i));
+      cur = i;
+      slides.forEach(function (s, k) {
+        s.classList.toggle("is-on", k === i);
+        s.classList.toggle("is-before", k < i);
+        s.setAttribute("aria-hidden", k === i ? "false" : "true");
+      });
+      dots.attr("aria-current", function (s, k) { return String(k === i); }).attr("aria-selected", function (s, k) { return String(k === i); });
+      d3.select("#prev").property("disabled", i === 0);
+      d3.select("#next").property("disabled", i === N - 1);
+      d3.select("#count").text(i === 0 ? "" : i + " / " + (N - 1));
+    }
+    go(0);
+
+    d3.select("#prev").on("click", function () { go(cur - 1); });
+    d3.select("#next").on("click", function () { go(cur + 1); });
+
+    // tastiera: frecce sinistra e destra (sulla pagina dell'iframe)
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowRight") { go(cur + 1); e.preventDefault(); }
+      else if (e.key === "ArrowLeft") { go(cur - 1); e.preventDefault(); }
+    });
+
+    // swipe
+    var sx = null, sy = null;
+    var tr = document.getElementById("track");
+    tr.addEventListener("pointerdown", function (e) { sx = e.clientX; sy = e.clientY; });
+    tr.addEventListener("pointerup", function (e) {
+      if (sx == null) return;
+      var dx = e.clientX - sx, dy = e.clientY - sy;
+      sx = null;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) go(cur + (dx < 0 ? 1 : -1));
+    });
+    tr.addEventListener("pointercancel", function () { sx = null; });
+    R.scheduleHeight();
+  }).catch(function (e) { R.fail("#track", e); });
+})();
+</script>
+</body>
+</html>

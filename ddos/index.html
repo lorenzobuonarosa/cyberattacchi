@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attacchi DDoS con disservizi – Radar QN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,700&display=swap">
+<link rel="stylesheet" href="../assets/radar.css">
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="../assets/radar.js"></script>
+</head>
+<body>
+<main class="radar">
+  <header>
+    <h1 class="r-title">Gli attacchi DDoS degli hacktivisti fanno sempre meno danni</h1>
+    <p class="r-sub">Quota di attacchi DDoS contro l'Italia che hanno causato disservizi, %</p>
+  </header>
+
+  <figure class="r-chart" id="chart"></figure>
+  <div class="r-key">
+    <span><i class="sw" style="background:var(--blue);border-radius:50%"></i>Dato ACN</span>
+    <span><i class="sw sw--ring"></i>Valore approssimato («circa»)</span>
+    <span><i class="sw" style="background:var(--grey-5)"></i>Nessuna attività DDoS hacktivista</span>
+  </div>
+  <p class="r-note">ACN non pubblica il dato ogni mese e lo calcola su basi diverse (attacchi rilevati, rivendicati o eventi). Maggio 2026: circa 20 casi con disservizi su 117 attacchi.</p>
+
+  <footer class="r-foot">
+    <span>Fonte: ACN – Agenzia per la cybersicurezza nazionale, Operational Summary mensili</span>
+    <span>Elaborazione Radar – QN</span>
+  </footer>
+</main>
+
+<script>
+(function () {
+  var R = Radar, fmt = R.fmt;
+  var parse = d3.timeParse("%Y-%m");
+  var monthLong = R.timeLocale.format("%B %Y");
+  var monthShort = R.timeLocale.format("%b");
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function mid(d) { return d3.timeDay.offset(d, 14); }
+  var GAP = { from: parse("2026-06"), to: parse("2026-09"), text: "Giugno-agosto 2026: nessuna attività DDoS hacktivista" };
+  var OLY = { key: "2026-02", text: "Olimpiadi di Milano Cortina: nessun incidente significativo durante i Giochi" };
+
+  R.loadCSV("../data/ddos.csv").then(function (rows) {
+    var data = rows.map(function (r) {
+      var s = (r.percentuale || "").trim();
+      return {
+        key: r.mese, date: parse(r.mese), v: R.num(s), dec: s.indexOf(",") >= 0 ? s.split(",")[1].length : 0,
+        n: R.num(r.attacchi), approx: /^s/i.test(r.approssimato || ""), desc: r.descrizione
+      };
+    }).filter(function (d) { return d.date && d.v != null; }).sort(function (a, b) { return a.date - b.date; });
+    var top = data.reduce(function (a, b) { return b.v > a.v ? b : a; });
+    var lastD = data[data.length - 1];
+    function vtxt(d) { return (d.approx ? "≈" : "") + fmt(d.v, d.dec) + "%"; }
+
+    var host = document.getElementById("chart");
+    var tip = R.tooltip(host);
+    var clear = function () {};
+    R.dismissOutside(host, function () { tip.hide(); clear(); });
+
+    R.responsive(host, function (W, phase) {
+      var narrow = R.isNarrow(W);
+      var m = { top: narrow ? 64 : 50, right: 8, bottom: 30, left: 30 };
+      var H = narrow ? 360 : 380;
+      var w = W - m.left - m.right, h = H - m.top - m.bottom;
+      var x = d3.scaleTime().domain([d3.timeMonth.offset(data[0].date, -1), d3.timeMonth.offset(lastD.date, 2)]).range([0, w]);
+      var y = d3.scaleLinear().domain([0, top.v]).nice().range([h, 0]);
+      var yTicks = y.ticks(narrow ? 3 : 3);
+
+      d3.select(host).select("svg").remove();
+      var svg = d3.select(host).insert("svg", ".r-tip").attr("width", W).attr("height", H).attr("role", "img")
+        .attr("aria-label", "Grafico a punti: la quota di attacchi DDoS contro l'Italia che hanno causato disservizi passa da circa il " +
+          fmt(top.v, top.dec) + "% a " + monthLong(top.date) + " all'" + fmt(lastD.v, lastD.dec) + "% a " + monthLong(lastD.date) +
+          ". Tra giugno e agosto 2026 nessuna attività DDoS hacktivista.");
+      svg.append("title").text("Quota di attacchi DDoS contro l'Italia che hanno causato disservizi");
+      var g = svg.append("g").attr("transform", "translate(" + m.left + "," + m.top + ")");
+
+      // fascia giugno-agosto 2026
+      var bx0 = x(GAP.from), bx1 = x(GAP.to);
+      g.append("rect").attr("x", bx0).attr("width", bx1 - bx0).attr("y", 0).attr("height", h).style("fill", "var(--grey-5)").style("opacity", 0.7);
+
+      g.append("g").attr("class", "grid").selectAll("line").data(yTicks).join("line")
+        .attr("x1", 0).attr("x2", w)
+        .attr("y1", function (d) { return Math.round(y(d)) + 0.5; }).attr("y2", function (d) { return Math.round(y(d)) + 0.5; })
+        .attr("class", function (d) { return d === 0 ? "baseline" : null; });
+      g.append("g").selectAll("text").data(yTicks).join("text").attr("class", "tick-label")
+        .attr("x", -8).attr("y", function (d) { return y(d); }).attr("dy", "0.35em").attr("text-anchor", "end")
+        .text(function (d) { return fmt(d, 0) + (d === yTicks[yTicks.length - 1] ? "%" : ""); });
+
+      // asse X: mesi veri
+      var months = d3.timeMonth.range(d3.timeMonth.ceil(x.domain()[0]), x.domain()[1]);
+      var step = narrow ? 6 : 3;
+      var labeled = months.filter(function (d) { return d.getMonth() % step === 0; });
+      var xa = g.append("g").attr("transform", "translate(0," + h + ")");
+      xa.selectAll("line").data(months).join("line")
+        .attr("x1", function (d) { return Math.round(x(d)) + 0.5; }).attr("x2", function (d) { return Math.round(x(d)) + 0.5; })
+        .attr("y1", 0).attr("y2", function (d) { return labeled.indexOf(d) >= 0 ? 5 : 3; })
+        .style("stroke", function (d) { return labeled.indexOf(d) >= 0 ? "var(--ink)" : "var(--grey-light)"; });
+      xa.selectAll("text").data(labeled).join("text").attr("class", "tick-label")
+        .attr("x", function (d) { return x(d); }).attr("y", 20).attr("text-anchor", "middle")
+        .style("font-weight", function (d) { return d.getMonth() === 0 ? 600 : null; })
+        .text(function (d) { return d.getMonth() === 0 ? d.getFullYear() : monthShort(d); });
+
+      // lollipop
+      var gm = g.append("g");
+      var stems = gm.selectAll("line").data(data).join("line").attr("class", "mark")
+        .attr("x1", function (d) { return x(mid(d.date)); }).attr("x2", function (d) { return x(mid(d.date)); })
+        .attr("y1", h).style("stroke", function (d) { return d === top ? "var(--red)" : "var(--blue)"; })
+        .attr("stroke-width", 1.5).style("opacity", function (d) { return d.approx ? 0.55 : 1; })
+        .attr("stroke-dasharray", function (d) { return d.approx ? "2 2" : null; });
+      R.enter(stems, phase, function (s) { s.attr("y2", h); }, function (s) { s.attr("y2", function (d) { return y(d.v); }); });
+      var dots = gm.selectAll("circle").data(data).join("circle").attr("class", "mark")
+        .attr("cx", function (d) { return x(mid(d.date)); }).attr("r", 5)
+        .style("fill", function (d) { return d.approx ? "var(--bg)" : (d === top ? "var(--red)" : "var(--blue)"); })
+        .style("stroke", function (d) { return d === top ? "var(--red)" : (d.approx ? "var(--blue)" : "var(--bg)"); })
+        .attr("stroke-width", function (d) { return d.approx ? 2 : 1.5; });
+      R.enter(dots, phase, function (s) { s.attr("cy", h); }, function (s) { s.attr("cy", function (d) { return y(d.v); }); });
+      // se il punto precedente è troppo vicino, l'etichetta va a destra del punto
+      function side(d) { var i = data.indexOf(d); return i > 0 && x(mid(d.date)) - x(mid(data[i - 1].date)) < 26; }
+      var vals = gm.selectAll("text").data(data).join("text").attr("class", "val-label mark")
+        .attr("text-anchor", function (d) { return side(d) ? "start" : "middle"; })
+        .attr("x", function (d) { return x(mid(d.date)) + (side(d) ? 8 : 0); })
+        .attr("y", function (d) { return side(d) ? y(d.v) : y(d.v) - 11; }).attr("dy", function (d) { return side(d) ? "0.35em" : null; })
+        .style("fill", function (d) { return d === top ? "var(--red)" : null; })
+        .text(vtxt);
+      R.enter(vals, phase, function (s) { s.style("opacity", 0); }, function (s) { s.style("opacity", 1); }, R.DUR * 0.7);
+
+      // annotazioni
+      var an = g.append("g").attr("class", "anno");
+      // 1) fascia estiva: testo nel margine alto, allineato a destra
+      var ta = an.append("text").attr("x", w).attr("y", 0).attr("text-anchor", "end").text(GAP.text).call(R.wrap, narrow ? 170 : 220);
+      var bba = ta.node().getBBox();
+      ta.attr("transform", "translate(0," + (-m.top + 2 - bba.y) + ")");
+      var bandC = (bx0 + bx1) / 2, tBottom = -m.top + 2 + bba.height;
+      an.append("line").attr("x1", bandC).attr("x2", bandC).attr("y1", tBottom + 4).attr("y2", 8);
+      an.append("circle").attr("cx", bandC).attr("cy", 8).attr("r", 1.75);
+      // 2) Olimpiadi, febbraio 2026
+      var o = data.find(function (d) { return d.key === OLY.key; });
+      if (o) {
+        var ox = x(mid(o.date)), oy = y(o.v) - 27;
+        var to = an.append("text").attr("x", ox + 6).attr("y", 0).attr("text-anchor", "end").text(OLY.text).call(R.wrap, narrow ? 150 : 200);
+        var bbo = to.node().getBBox();
+        var ty = y(top.v) - 2 - bbo.y;   // in alto, nello spazio libero sotto la linea del 30%
+        to.attr("transform", "translate(-12," + (ty) + ")");
+        var oBottom = ty + bbo.y + bbo.height;
+        an.append("path").attr("d", "M" + (ox - 6) + "," + (oBottom - 6) + "H" + ox + "V" + oy);
+      }
+      R.enter(an, phase, function (s) { s.style("opacity", 0); }, function (s) { s.style("opacity", 1); }, R.DUR * 0.8);
+
+      clear = function () { gm.selectAll(".mark").classed("is-dimmed", false); };
+      g.append("g").selectAll("rect").data(data).join("rect").attr("class", "hit")
+        .attr("x", function (d) { return x(mid(d.date)) - 14; }).attr("width", 28).attr("y", -10).attr("height", h + 10)
+        .on("pointerenter pointerdown", function (ev, d) {
+          gm.selectAll(".mark").classed("is-dimmed", function (q) { return q !== d; });
+          var rowsT = d.n != null ? [["Attacchi DDoS", fmt(d.n, 0)]] : [];
+          tip.show(R.tipHTML({
+            title: cap(monthLong(d.date)), value: vtxt(d), unit: "con disservizi", rows: rowsT,
+            note: d.desc + (d.approx ? ". Valore approssimato: ACN scrive «circa»" : "")
+          }), x(mid(d.date)) + m.left, y(d.v) + m.top);
+        })
+        .on("pointerleave", function (ev) { if (ev.pointerType === "mouse") { tip.hide(); clear(); } });
+    });
+  }).catch(function (e) { R.fail("#chart", e); });
+})();
+</script>
+</body>
+</html>

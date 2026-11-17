@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Da dove arrivano gli attacchi – Radar QN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,700&display=swap">
+<link rel="stylesheet" href="../assets/radar.css">
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="../assets/radar.js"></script>
+</head>
+<body>
+<main class="radar">
+  <header>
+    <h1 class="r-title">Tre attacchi attribuiti su quattro portano a Russia, Cina, Iran e Corea del Nord</h1>
+    <p class="r-sub">Paesi a cui sono attribuiti gli attacchi informatici a sfondo politico, 2023-2026, % sugli attacchi attribuiti</p>
+  </header>
+
+  <div class="r-big" id="big" aria-hidden="true">
+    <span class="r-big__num"><span id="big-num">&nbsp;</span>%</span>
+    <span class="r-big__label" id="big-label"></span>
+  </div>
+
+  <figure class="r-chart" id="chart" style="margin-top:24px"></figure>
+  <p class="r-note">Un attacco può essere attribuito a più Paesi. Il 2025 e il 2026 sono parziali: gli incidenti entrano nel database anche con mesi di ritardo.</p>
+
+  <footer class="r-foot">
+    <span>Fonte: EuRepoC – European Repository of Cyber Incidents, dati estratti il 17/11/2026</span>
+    <span>Elaborazione Radar – QN</span>
+  </footer>
+</main>
+
+<script>
+(function () {
+  var R = Radar, fmt = R.fmt;
+
+  Promise.all([R.loadCSV("../data/provenienza.csv"), R.loadCSV("../data/provenienza-riepilogo.csv")]).then(function (res) {
+    var data = res[0].map(function (r) {
+      return { paese: r.paese, n: R.num(r.attacchi), p: R.num(r.percentuale) };
+    }).filter(function (d) { return d.p != null; }).sort(function (a, b) { return b.p - a.p; });
+    var S = {};
+    res[1].forEach(function (r) { S[r.voce] = R.num(r.valore); });
+    var tot = S.incidenti_totali, attr = S.incidenti_attribuiti, nonAttr = tot - attr;
+    var share = nonAttr / tot * 100;
+
+    // ---- Big number ----
+    var f0 = function (v) { return fmt(v, 0); };
+    d3.select("#big-label").text("degli attacchi registrati dal 2023 non ha un responsabile identificato pubblicamente")
+      .attr("title", fmt(nonAttr, 0) + " su " + fmt(tot, 0));
+    d3.select("#big").attr("aria-hidden", null).attr("aria-label", fmt(share, 0) + "%: " + fmt(nonAttr, 0) + " attacchi su " + fmt(tot, 0) + " registrati dal 2023 non hanno un responsabile identificato pubblicamente");
+    var bigNum = d3.select("#big-num");
+    if (R.reduced) bigNum.text(f0(share));
+    else { bigNum.text(f0(0)); R.onFirstView(document.getElementById("big"), function () { R.countUp(bigNum, share, f0, "play"); }); }
+
+    var top = data[0];
+    var host = document.getElementById("chart");
+    var tip = R.tooltip(host);
+    var clear = function () {};
+    R.dismissOutside(host, function () { tip.hide(); clear(); });
+
+    R.responsive(host, function (W, phase) {
+      var narrow = R.isNarrow(W);
+      var labW = narrow ? 104 : 120;
+      var row = 32, bh = 20;
+      var H = data.length * row;
+      var w = W - labW;
+      var x = d3.scaleLinear().domain([0, top.p]).range([0, w - 52]);
+
+      d3.select(host).select("svg").remove();
+      var svg = d3.select(host).insert("svg", ".r-tip").attr("width", W).attr("role", "img")
+        .attr("aria-label", "Grafico a barre: degli attacchi attribuiti dal 2023, il " + fmt(top.p, 1) + "% è attribuito alla " + top.paese +
+          ", seguono " + data.slice(1, 4).map(function (d) { return d.paese + " (" + fmt(d.p, 1) + "%)"; }).join(", ") + ".");
+      svg.append("title").text("Paesi a cui sono attribuiti gli attacchi informatici a sfondo politico, % sugli attacchi attribuiti");
+
+      // annotazione sulla Russia, sopra la fine della barra: misuro il testo per riservare lo spazio
+      var an = svg.append("g").attr("class", "anno");
+      var ax = labW + x(top.p) - 6;
+      var t = an.append("text").attr("x", ax + 6).attr("y", 0).attr("text-anchor", "end")
+        .text("Il peso di Mosca è salito dal 25% dell'intera serie storica al 35% dal 2023")
+        .call(R.wrap, narrow ? 200 : 280);
+      var tb = t.node().getBBox();
+      var mTop = Math.ceil(tb.height + 14);
+      t.attr("transform", "translate(0," + (-tb.y) + ")");
+      an.append("line").attr("x1", ax).attr("x2", ax).attr("y1", tb.height + 4).attr("y2", mTop + (row - bh) / 2 - 3);
+      an.append("circle").attr("cx", ax).attr("cy", mTop + (row - bh) / 2 - 3).attr("r", 1.75);
+      R.enter(an, phase, function (s) { s.style("opacity", 0); }, function (s) { s.style("opacity", 1); }, R.DUR * 0.8);
+
+      svg.attr("height", H + mTop);
+      var g = svg.append("g").attr("transform", "translate(" + labW + "," + mTop + ")");
+      var yy = function (i) { return i * row + (row - bh) / 2; };
+
+      var names = g.append("g").selectAll("text").data(data).join("text").attr("class", "tick-label mark")
+        .attr("x", -labW).attr("y", function (d, i) { return yy(i) + bh / 2; }).attr("dy", "0.35em")
+        .style("fill", function (d) { return d === top ? "var(--ink)" : null; })
+        .style("font-weight", function (d) { return d === top ? 600 : null; })
+        .style("font-size", "13px")
+        .text(function (d) { return d.paese; });
+      g.append("line").attr("class", "baseline").attr("x1", 0.5).attr("x2", 0.5).attr("y1", 0).attr("y2", H);
+
+      var bars = g.append("g").selectAll("path").data(data).join("path").attr("class", "mark")
+        .style("fill", function (d) { return d === top ? "var(--red)" : "var(--blue)"; });
+      R.enter(bars, phase,
+        function (s) { s.attr("d", function (d, i) { return R.barPathH(1, yy(i), 0, bh, 2); }); },
+        function (s) { s.attrTween("d", function (d) { var i = data.indexOf(d); return function (t) { return R.barPathH(1, yy(i), x(d.p) * t, bh, 2); }; }); });
+
+      var vals = g.append("g").selectAll("text").data(data).join("text").attr("class", "val-label mark")
+        .attr("x", function (d) { return x(d.p) + 7; }).attr("y", function (d, i) { return yy(i) + bh / 2; }).attr("dy", "0.35em")
+        .style("fill", function (d) { return d === top ? "var(--red)" : null; });
+      vals.each(function (d) { R.countUp(d3.select(this), d.p, function (v) { return fmt(v, 1) + "%"; }, phase); });
+
+      clear = function () { g.selectAll(".mark").classed("is-dimmed", false); };
+      g.append("g").selectAll("rect").data(data).join("rect").attr("class", "hit")
+        .attr("x", -labW).attr("width", W).attr("y", function (d, i) { return i * row; }).attr("height", row)
+        .on("pointerenter pointerdown", function (ev, d) {
+          g.selectAll(".mark").classed("is-dimmed", function (q) { return q !== d; });
+          var i = data.indexOf(d);
+          tip.show(R.tipHTML({
+            title: d.paese, value: fmt(d.p, 1) + "%", unit: "degli attacchi attribuiti",
+            rows: [["Attacchi attribuiti", fmt(d.n, 0)]]
+          }), Math.min(x(d.p) + labW, W - 30), yy(i) + mTop);
+        })
+        .on("pointerleave", function (ev) { if (ev.pointerType === "mouse") { tip.hide(); clear(); } });
+    });
+  }).catch(function (e) { R.fail("#chart", e); });
+})();
+</script>
+</body>
+</html>

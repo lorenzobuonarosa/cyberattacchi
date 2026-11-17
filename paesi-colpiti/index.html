@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I Paesi più colpiti dagli attacchi – Radar QN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,700&display=swap">
+<link rel="stylesheet" href="../assets/radar.css">
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="../assets/radar.js"></script>
+<style>
+  .r-toggle { display: inline-flex; margin: 24px 0 0; border: 1px solid var(--rule); border-radius: 999px; padding: 2px; gap: 2px; }
+  .r-toggle button {
+    font: 600 13px/1 var(--sans); color: var(--ink-2); background: transparent; border: 0;
+    border-radius: 999px; padding: 8px 14px; cursor: pointer;
+  }
+  .r-toggle button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  .r-toggle button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .bub-name { font-size: 12px; font-weight: 600; pointer-events: none; }
+  .bub-val { font-size: 12px; font-weight: 400; pointer-events: none; }
+  .bub-out { paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+  .bubble { cursor: pointer; }
+</style>
+</head>
+<body>
+<main class="radar">
+  <header>
+    <h1 class="r-title">L'Italia è il settimo Paese più colpito al mondo e il terzo in Europa</h1>
+    <p class="r-sub">Attacchi informatici a sfondo politico subiti dal 2023, per Paese. Più grande è la bolla, più attacchi</p>
+  </header>
+
+  <div class="r-toggle" role="group" aria-label="Scegli la vista">
+    <button type="button" data-view="mondo" aria-pressed="true">Mondo</button>
+    <button type="button" data-view="ue" aria-pressed="false">Unione europea</button>
+  </div>
+
+  <figure class="r-chart" id="chart" style="margin-top:12px"></figure>
+  <div class="r-key">
+    <span><i class="sw" style="background:var(--red)"></i>Italia</span>
+    <span><i class="sw" style="background:var(--blue)"></i>Unione europea</span>
+    <span id="key-eu"><i class="sw" style="background:var(--blue-4)"></i>Altri Paesi europei</span>
+    <span id="key-world"><i class="sw" style="background:var(--grey-5)"></i>Resto del mondo</span>
+  </div>
+  <p class="r-note">Un attacco può colpire più Paesi. Il 2025 e il 2026 sono parziali.<span id="note-ue" style="display:none"> Nella vista Unione europea le bolle sono ingrandite rispetto alla vista Mondo.</span></p>
+
+  <footer class="r-foot">
+    <span>Fonte: EuRepoC – European Repository of Cyber Incidents, dati estratti il 17/11/2026</span>
+    <span>Elaborazione Radar – QN</span>
+  </footer>
+</main>
+
+<script>
+(function () {
+  var R = Radar, fmt = R.fmt;
+  var TOP_WORLD = 25;
+
+  R.loadCSV("../data/paesi-colpiti.csv").then(function (rows) {
+    var all = rows.map(function (r) {
+      return { paese: r.paese, n: R.num(r.attacchi), area: (r.area || "").trim() };
+    }).filter(function (d) { return d.n != null; }).sort(function (a, b) { return b.n - a.n; });
+    all.forEach(function (d, i) { d.rankW = 1 + all.filter(function (q) { return q.n > d.n; }).length; });
+    var ue = all.filter(function (d) { return d.area === "ue"; });
+    ue.forEach(function (d) { d.rankU = 1 + ue.filter(function (q) { return q.n > d.n; }).length; });
+    var VIEWS = { mondo: all.slice(0, TOP_WORLD), ue: ue };
+    var usa = all[0];
+    var ita = all.find(function (d) { return d.paese === "Italia"; });
+    var view = "mondo";
+
+    function fill(d) {
+      if (d.paese === "Italia") return "var(--red)";
+      if (d.area === "ue") return "var(--blue)";
+      if (d.area === "extra_ue_europa") return "var(--blue-4)";
+      return "var(--grey-5)";
+    }
+    function textFill(d) { return d.paese === "Italia" || d.area === "ue" ? "var(--on-dark)" : "var(--ink)"; }
+
+    var host = document.getElementById("chart");
+    var tip = R.tooltip(host);
+    var clear = function () {};
+    R.dismissOutside(host, function () { tip.hide(); clear(); });
+
+    var measure = document.createElement("canvas").getContext("2d");
+    function tw(s, weight) { measure.font = (weight || 600) + " 12px 'Libre Franklin', Arial, sans-serif"; return measure.measureText(s).width; }
+
+    // layout a forze, calcolato in modo sincrono e deterministico
+    function layout(list, W, H, k, top) {
+      var cx = W / 2, cy = top + (H - top) / 2;
+      var nodes = list.map(function (d, i) {
+        var a = i * 2.39996, rr = 6 * Math.sqrt(i + 1) * 4;
+        return { d: d, r: Math.sqrt(d.n) * k, x: cx + rr * Math.cos(a), y: cy + rr * Math.sin(a) };
+      });
+      var sim = d3.forceSimulation(nodes).stop()
+        .force("x", d3.forceX(cx).strength(0.045))
+        .force("y", d3.forceY(cy).strength(0.11))
+        .force("c", d3.forceCollide(function (n) { return n.r + 1.5; }).iterations(3));
+      for (var i = 0; i < 360; i++) {
+        sim.tick();
+        nodes.forEach(function (n) {
+          n.x = Math.max(n.r + 1, Math.min(W - n.r - 1, n.x));
+          n.y = Math.max(top + n.r + 1, Math.min(H - n.r - 1, n.y));
+        });
+      }
+      var m = {};
+      nodes.forEach(function (n) { m[n.d.paese] = n; });
+      return m;
+    }
+
+    var state = { W: 0 };
+    function computeAll(W) {
+      var narrow = R.isNarrow(W);
+      var H = narrow ? 420 : 470;
+      var top = narrow ? 58 : 44;   // spazio per l'annotazione sugli Stati Uniti
+      var sumW = d3.sum(VIEWS.mondo, function (d) { return d.n; });
+      var sumU = d3.sum(VIEWS.ue, function (d) { return d.n; });
+      // in ogni vista l'area è proporzionale agli attacchi; la vista Ue usa una scala più grande
+      var k = Math.sqrt(0.5 * W * (H - top) / (Math.PI * sumW));
+      var kU = Math.sqrt(0.46 * W * H / (Math.PI * sumU));
+      state = { W: W, H: H, top: top, k: k, narrow: narrow,
+        lay: { mondo: layout(VIEWS.mondo, W, H, k, top), ue: layout(VIEWS.ue, W, H, kU, 0) } };
+    }
+
+    var svg, gB, gL, an;
+    function render(phase, animateView) {
+      var W = state.W, H = state.H, lay = state.lay[view], list = VIEWS[view];
+      var dur = animateView && !R.reduced ? R.DUR : 0;
+      var DATA = all.filter(function (d) { return lay[d.paese]; });
+
+      svg.attr("aria-label", view === "mondo"
+        ? "Grafico a bolle: tra i " + list.length + " Paesi più colpiti dagli attacchi informatici a sfondo politico dal 2023, gli Stati Uniti ne contano " + fmt(usa.n, 0) + "; l'Italia è " + ita.rankW + "ª con " + fmt(ita.n, 0) + "."
+        : "Grafico a bolle: nell'Unione europea i Paesi più colpiti sono " + ue.slice(0, 3).map(function (d) { return d.paese + " (" + fmt(d.n, 0) + ")"; }).join(", ") + ".");
+      d3.select("#key-eu").style("display", view === "ue" ? "none" : null);
+      d3.select("#key-world").style("display", view === "ue" ? "none" : null);
+      d3.select("#note-ue").style("display", view === "ue" ? null : "none");
+
+      var circ = gB.selectAll("circle").data(DATA, function (d) { return d.paese; });
+      circ.exit().transition().duration(dur).ease(R.EASE).attr("r", 0).style("opacity", 0).remove();
+      var enterC = circ.enter().append("circle").attr("class", "bubble mark")
+        .attr("cx", function (d) { return lay[d.paese].x; }).attr("cy", function (d) { return lay[d.paese].y; })
+        .attr("r", 0).style("fill", fill).style("stroke", "var(--bg)").attr("stroke-width", 1);
+      var merged = enterC.merge(circ);
+      if (phase === "pre") merged.attr("r", 0);
+      else if (phase === "play") {
+        merged.transition().duration(R.DUR).ease(R.EASE).delay(function (d, i) { return i * 18; })
+          .attr("r", function (d) { return lay[d.paese].r; });
+      } else {
+        merged.transition().duration(dur).ease(d3.easeCubicInOut)
+          .attr("cx", function (d) { return lay[d.paese].x; }).attr("cy", function (d) { return lay[d.paese].y; })
+          .attr("r", function (d) { return lay[d.paese].r; }).style("opacity", 1);
+      }
+
+      // etichette
+      gL.selectAll("*").interrupt().remove();
+      var labs = [];
+      DATA.forEach(function (d) {
+        var n = lay[d.paese], val = fmt(d.n, 0);
+        var wName = tw(d.paese, 600), fits = n.r >= 17 && wName <= 2 * n.r - 8;
+        if (fits) labs.push({ d: d, x: n.x, y: n.y, inside: true, two: n.r >= 24 });
+        else if (d.paese === "Italia") labs.push({ d: d, x: n.x, y: n.y + n.r + 14, inside: false });
+      });
+      var lg = gL.selectAll("g").data(labs).join("g").attr("transform", function (l) { return "translate(" + l.x + "," + l.y + ")"; });
+      lg.append("text").attr("class", function (l) { return "bub-name" + (l.inside ? "" : " bub-out"); })
+        .attr("text-anchor", "middle").attr("dy", function (l) { return l.inside && l.two ? "-0.15em" : "0.35em"; })
+        .style("fill", function (l) { return l.inside ? textFill(l.d) : "var(--red)"; })
+        .text(function (l) { return l.d.paese; });
+      lg.filter(function (l) { return l.inside && l.two; }).append("text").attr("class", "bub-val")
+        .attr("text-anchor", "middle").attr("dy", "1.05em").style("fill", function (l) { return textFill(l.d); })
+        .text(function (l) { return fmt(l.d.n, 0); });
+      var labDelay = phase === "play" ? R.DUR * 0.7 : dur * 0.85;
+      if (phase === "pre") gL.style("opacity", 0);
+      else if (labDelay) gL.style("opacity", 0).transition().delay(labDelay).duration(250).style("opacity", 1);
+      else gL.style("opacity", 1);
+
+      // annotazione sugli Stati Uniti (solo vista Mondo)
+      an.selectAll("*").remove();
+      if (view === "mondo") {
+        var u = lay[usa.paese];
+        var ax = u.x, ay = u.y - u.r;
+        var right = ax < W / 2;
+        var t = an.append("text").attr("x", 0).attr("y", 13)
+          .text("Gli Stati Uniti da soli raccolgono " + fmt(usa.n, 0) + " attacchi")
+          .call(R.wrap, state.narrow ? 190 : 330);
+        var bb = t.node().getBBox();
+        var tx = Math.max(0, Math.min(W - bb.width, ax - 10));
+        t.attr("transform", "translate(" + tx + ",0)");
+        an.append("line").attr("x1", ax).attr("x2", ax).attr("y1", bb.y + bb.height + 4).attr("y2", ay - 2);
+        an.append("circle").attr("cx", ax).attr("cy", ay - 2).attr("r", 1.75);
+        if (phase === "pre") an.style("opacity", 0);
+        else an.style("opacity", 0).transition().delay(phase === "play" ? R.DUR * 0.8 : dur * 0.85).duration(250).style("opacity", 1);
+      }
+
+      // interazione
+      clear = function () { gB.selectAll("circle").classed("is-dimmed", false); };
+      gB.selectAll("circle")
+        .on("pointerenter pointerdown", function (ev, d) {
+          gB.selectAll("circle").classed("is-dimmed", function (q) { return q !== d; });
+          var n = state.lay[view][d.paese]; if (!n) return;
+          var rank = view === "mondo" ? d.rankW + "° al mondo" : d.rankU + "° nell'Unione europea";
+          tip.show(R.tipHTML({ title: d.paese, value: fmt(d.n, 0), unit: "attacchi", rows: [["Posizione", rank]] }), n.x, n.y - n.r);
+        })
+        .on("pointerleave", function (ev) { if (ev.pointerType === "mouse") { tip.hide(); clear(); } });
+    }
+
+    R.responsive(host, function (W, phase) {
+      computeAll(W);
+      d3.select(host).select("svg").remove();
+      svg = d3.select(host).insert("svg", ".r-tip").attr("width", W).attr("height", state.H).attr("role", "img");
+      svg.append("title").text("Attacchi informatici a sfondo politico subiti dal 2023, per Paese");
+      an = svg.append("g").attr("class", "anno");
+      gB = svg.append("g");
+      gL = svg.append("g");
+      render(phase, false);
+    });
+
+    d3.selectAll(".r-toggle button").on("click", function () {
+      var v = this.getAttribute("data-view");
+      if (v === view) return;
+      view = v;
+      d3.selectAll(".r-toggle button").attr("aria-pressed", function () { return String(this.getAttribute("data-view") === view); });
+      tip.hide();
+      render("static", true);
+    });
+  }).catch(function (e) { R.fail("#chart", e); });
+})();
+</script>
+</body>
+</html>

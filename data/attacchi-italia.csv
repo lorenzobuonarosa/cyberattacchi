@@ -1,0 +1,9 @@
+data;ente;tipo;gruppo;conseguenza;evidenza;fonte
+2023-05;ASL 1 Abruzzo (Avezzano, Sulmona, L'Aquila);Ransomware;Monti;Sottratti 500 gigabyte di dati sanitari, poi diffusi online. Servizi in difficoltà per settimane;500 gigabyte di dati sanitari;EuRepoC
+2023-12;Westpole, fornitore cloud della pubblica amministrazione;Ransomware;LockBit 3.0;Bloccati per settimane i servizi digitali delle amministrazioni che si appoggiavano al fornitore;bloccati per settimane;EuRepoC
+2024-01;ASP Basilicata;Ransomware;Rhysida (sospetto);Dati sottratti e pubblicati, sistemi dell'azienda sanitaria fermi per settimane;fermi per settimane;EuRepoC
+2024-07;Un fornitore del settore sanitario;Attacco supply chain;;Un solo attacco al fornitore ha avuto effetti su oltre 30 strutture sanitarie;oltre 30 strutture sanitarie;ACN, luglio 2024
+2024-07;Comune di Fabriano;Ransomware;;Sistemi informatici del Comune fuori uso per settimane;fuori uso per settimane;EuRepoC
+2025-02;Un'azienda del settore energetico;Ransomware;;Interrotti i servizi ai clienti, con disservizi a cascata su altri operatori del settore;disservizi a cascata;ACN, febbraio 2025
+2026-08;Un fornitore di servizi informatici;Ransomware;Titan;Cifrati i dati di un'area condivisa, con impatti sulle organizzazioni clienti che la usavano;impatti sulle organizzazioni clienti;ACN, agosto 2026
+2026-09;Un polo ospedaliero su due sedi;Ransomware;;Chiusa temporaneamente una delle due strutture, limitata la gestione dei pazienti nell'altra. Ingresso probabile da un apparato di rete vulnerabile;Chiusa temporaneamente;ACN, settembre 2026

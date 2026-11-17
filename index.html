@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cyberattacchi in Italia – dataviz Radar QN</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,700&display=swap">
+<style>
+  body { margin: 0; background: #eceef0; color: #1a1a1a; font: 14px/1.45 "Libre Franklin", Arial, sans-serif; }
+  main { max-width: 1200px; margin: 0 auto; padding: 24px 16px 60px; }
+  h1 { font: 700 32px/1.1 Newsreader, Georgia, serif; margin: 0 0 6px; }
+  .intro { color: #6b6b6b; margin: 0 0 24px; }
+  .item { background: #fff; padding: 20px; margin: 0 0 24px; border-radius: 4px; }
+  h2 { font-size: 18px; margin: 0; }
+  h2 a { font-size: 13px; font-weight: 500; color: #1f4fd1; margin-left: 8px; }
+  .t { margin: 2px 0 14px; color: #6b6b6b; }
+  .prev { display: flex; gap: 20px; align-items: flex-start; overflow-x: auto; padding-bottom: 6px; }
+  .prev iframe { border: 1px solid #e3e3e3; background: #f7f8f9; display: block; }
+  .lab { font-size: 12px; font-weight: 600; color: #6b6b6b; margin: 0 0 6px; }
+  pre { background: #f4f5f6; border: 1px solid #e3e3e3; padding: 10px; font-size: 11.5px; white-space: pre-wrap; word-break: break-all; max-height: 150px; overflow: auto; margin: 0; }
+  .copy { font: 600 12px "Libre Franklin", Arial, sans-serif; margin-left: 8px; padding: 4px 10px; border: 1px solid #1f4fd1; background: #1f4fd1; color: #fff; border-radius: 999px; cursor: pointer; }
+  .src { font-size: 12px; color: #6b6b6b; margin: 8px 0 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Cyberattacchi in Italia</h1>
+  <p class="intro">Sei dataviz per Radar – QN. Ogni snippet contiene l'iframe e lo script del CMS (altezza e tema): se in un articolo ci sono più dataviz, lo script può restare in ognuna, lavora una volta sola.</p>
+
+  <section class="item">
+    <h2>1. La crescita degli attacchi gravi <a href="crescita/">crescita/</a></h2>
+    <p class="t">In Italia gli attacchi gravi sono cresciuti più che nel resto del mondo</p>
+    <div class="prev">
+      <div><p class="lab">Desktop</p><iframe src="crescita/" style="width:760px;height:660px" title="In Italia gli attacchi gravi sono cresciuti più che nel resto del mondo – desktop"></iframe></div>
+      <div><p class="lab">Mobile (360px)</p><iframe src="crescita/" style="width:360px;height:920px" title="In Italia gli attacchi gravi sono cresciuti più che nel resto del mondo – mobile"></iframe></div>
+    </div>
+    <p class="lab">Snippet per il CMS <button type="button" class="copy">Copia</button></p>
+    <pre>&lt;iframe src=&quot;https://lorenzobuonarosa.github.io/cyberattacchi/crescita/&quot; width=&quot;100%&quot; height=&quot;660&quot; frameborder=&quot;0&quot; scrolling=&quot;no&quot; title=&quot;In Italia gli attacchi gravi sono cresciuti più che nel resto del mondo&quot;&gt;&lt;/iframe&gt;
+&lt;script&gt;
+(function(){if(window.__radarQNv2)return;window.__radarQNv2=1;var O=&quot;https://lorenzobuonarosa.github.io&quot;;var MQ=window.matchMedia(&quot;(prefers-color-scheme:dark)&quot;);function frames(){return Array.prototype.filter.call(document.getElementsByTagName(&quot;iframe&quot;),function(f){return(f.getAttribute(&quot;src&quot;)||&quot;&quot;).indexOf(O+&quot;/&quot;)===0;});}function theme(){var t=document.documentElement.getAttribute(&quot;data-theme&quot;);return t===&quot;dark&quot;||t===&quot;light&quot;?t:(MQ.matches?&quot;dark&quot;:&quot;light&quot;);}function bgOf(el){for(;el&amp;&amp;el.nodeType===1;el=el.parentElement){var c=getComputedStyle(el).backgroundColor;if(c&amp;&amp;c !==&quot;transparent&quot;&amp;&amp;!/rgba\([^)]*,\s*0\)$/.test(c))return c;}return null;}function send(f){try{f.contentWindow.postMessage({sentinel:&quot;radar-qn&quot;,type:&quot;theme&quot;,theme:theme(),bg:bgOf(f.parentElement)},O);}catch(e){}}function sendAll(){frames().forEach(send);}window.addEventListener(&quot;message&quot;,function(e){if(e.origin !==O)return;var d=e.data;if(!d||d.sentinel !==&quot;radar-qn&quot;||d.type !==&quot;height&quot;)return;frames().forEach(function(f){if(f.contentWindow !==e.source)return;var h=Math.ceil(+d.height);if(h &gt; 0&amp;&amp;20000 &gt; h)f.style.height=h+&quot;px&quot;;send(f);});});new MutationObserver(function(){sendAll();setTimeout(sendAll,400);}).observe(document.documentElement,{attributes:true,attributeFilter:[&quot;data-theme&quot;]});if(MQ.addEventListener)MQ.addEventListener(&quot;change&quot;,sendAll);})();
+&lt;/script&gt;</pre>
+    <p class="src">Dati: Clusit, Rapporto 2026 sulla sicurezza ICT in Italia (data/crescita.csv)</p>
+  </section>
+  <section class="item">
+    <h2>2. Di quali attacchi parliamo <a href="tipi-attacco/">tipi-attacco/</a></h2>
+    <p class="t">Metà degli attacchi sono DDoS, ma i danni li fa il ransomware</p>
+    <div class="prev">
+      <div><p class="lab">Desktop</p><iframe src="tipi-attacco/" style="width:760px;height:840px" title="Metà degli attacchi sono DDoS, ma i danni li fa il ransomware – desktop"></iframe></div>
+      <div><p class="lab">Mobile (360px)</p><iframe src="tipi-attacco/" style="width:360px;height:1100px" title="Metà degli attacchi sono DDoS, ma i danni li fa il ransomware – mobile"></iframe></div>
+    </div>
+    <p class="lab">Snippet per il CMS <button type="button" class="copy">Copia</button></p>
+    <pre>&lt;iframe src=&quot;https://lorenzobuonarosa.github.io/cyberattacchi/tipi-attacco/&quot; width=&quot;100%&quot; height=&quot;840&quot; frameborder=&quot;0&quot; scrolling=&quot;no&quot; title=&quot;Metà degli attacchi sono DDoS, ma i danni li fa il ransomware&quot;&gt;&lt;/iframe&gt;
+&lt;script&gt;
+(function(){if(window.__radarQNv2)return;window.__radarQNv2=1;var O=&quot;https://lorenzobuonarosa.github.io&quot;;var MQ=window.matchMedia(&quot;(prefers-color-scheme:dark)&quot;);function frames(){return Array.prototype.filter.call(document.getElementsByTagName(&quot;iframe&quot;),function(f){return(f.getAttribute(&quot;src&quot;)||&quot;&quot;).indexOf(O+&quot;/&quot;)===0;});}function theme(){var t=document.documentElement.getAttribute(&quot;data-theme&quot;);return t===&quot;dark&quot;||t===&quot;light&quot;?t:(MQ.matches?&quot;dark&quot;:&quot;light&quot;);}function bgOf(el){for(;el&amp;&amp;el.nodeType===1;el=el.parentElement){var c=getComputedStyle(el).backgroundColor;if(c&amp;&amp;c !==&quot;transparent&quot;&amp;&amp;!/rgba\([^)]*,\s*0\)$/.test(c))return c;}return null;}function send(f){try{f.contentWindow.postMessage({sentinel:&quot;radar-qn&quot;,type:&quot;theme&quot;,theme:theme(),bg:bgOf(f.parentElement)},O);}catch(e){}}function sendAll(){frames().forEach(send);}window.addEventListener(&quot;message&quot;,function(e){if(e.origin !==O)return;var d=e.data;if(!d||d.sentinel !==&quot;radar-qn&quot;||d.type !==&quot;height&quot;)return;frames().forEach(function(f){if(f.contentWindow !==e.source)return;var h=Math.ceil(+d.height);if(h &gt; 0&amp;&amp;20000 &gt; h)f.style.height=h+&quot;px&quot;;send(f);});});new MutationObserver(function(){sendAll();setTimeout(sendAll,400);}).observe(document.documentElement,{attributes:true,attributeFilter:[&quot;data-theme&quot;]});if(MQ.addEventListener)MQ.addEventListener(&quot;change&quot;,sendAll);})();
+&lt;/script&gt;</pre>
+    <p class="src">Dati: ENISA, Threat Landscape 2026 (data/tipi-attacco.csv, data/tipi-attacco-riepilogo.csv)</p>
+  </section>
+  <section class="item">
+    <h2>3. Provenienza degli attacchi <a href="provenienza/">provenienza/</a></h2>
+    <p class="t">Tre attacchi attribuiti su quattro portano a Russia, Cina, Iran e Corea del Nord</p>
+    <div class="prev">
+      <div><p class="lab">Desktop</p><iframe src="provenienza/" style="width:760px;height:700px" title="Tre attacchi attribuiti su quattro portano a Russia, Cina, Iran e Corea del Nord – desktop"></iframe></div>
+      <div><p class="lab">Mobile (360px)</p><iframe src="provenienza/" style="width:360px;height:960px" title="Tre attacchi attribuiti su quattro portano a Russia, Cina, Iran e Corea del Nord – mobile"></iframe></div>
+    </div>
+    <p class="lab">Snippet per il CMS <button type="button" class="copy">Copia</button></p>
+    <pre>&lt;iframe src=&quot;https://lorenzobuonarosa.github.io/cyberattacchi/provenienza/&quot; width=&quot;100%&quot; height=&quot;700&quot; frameborder=&quot;0&quot; scrolling=&quot;no&quot; title=&quot;Tre attacchi attribuiti su quattro portano a Russia, Cina, Iran e Corea del Nord&quot;&gt;&lt;/iframe&gt;
+&lt;script&gt;
+(function(){if(window.__radarQNv2)return;window.__radarQNv2=1;var O=&quot;https://lorenzobuonarosa.github.io&quot;;var MQ=window.matchMedia(&quot;(prefers-color-scheme:dark)&quot;);function frames(){return Array.prototype.filter.call(document.getElementsByTagName(&quot;iframe&quot;),function(f){return(f.getAttribute(&quot;src&quot;)||&quot;&quot;).indexOf(O+&quot;/&quot;)===0;});}function theme(){var t=document.documentElement.getAttribute(&quot;data-theme&quot;);return t===&quot;dark&quot;||t===&quot;light&quot;?t:(MQ.matches?&quot;dark&quot;:&quot;light&quot;);}function bgOf(el){for(;el&amp;&amp;el.nodeType===1;el=el.parentElement){var c=getComputedStyle(el).backgroundColor;if(c&amp;&amp;c !==&quot;transparent&quot;&amp;&amp;!/rgba\([^)]*,\s*0\)$/.test(c))return c;}return null;}function send(f){try{f.contentWindow.postMessage({sentinel:&quot;radar-qn&quot;,type:&quot;theme&quot;,theme:theme(),bg:bgOf(f.parentElement)},O);}catch(e){}}function sendAll(){frames().forEach(send);}window.addEventListener(&quot;message&quot;,function(e){if(e.origin !==O)return;var d=e.data;if(!d||d.sentinel !==&quot;radar-qn&quot;||d.type !==&quot;height&quot;)return;frames().forEach(function(f){if(f.contentWindow !==e.source)return;var h=Math.ceil(+d.height);if(h &gt; 0&amp;&amp;20000 &gt; h)f.style.height=h+&quot;px&quot;;send(f);});});new MutationObserver(function(){sendAll();setTimeout(sendAll,400);}).observe(document.documentElement,{attributes:true,attributeFilter:[&quot;data-theme&quot;]});if(MQ.addEventListener)MQ.addEventListener(&quot;change&quot;,sendAll);})();
+&lt;/script&gt;</pre>
+    <p class="src">Dati: EuRepoC, dati estratti il 17/11/2026 (data/provenienza.csv, data/provenienza-riepilogo.csv)</p>
+  </section>
+  <section class="item">
+    <h2>4. L&#x27;Italia rispetto agli altri Paesi <a href="paesi-colpiti/">paesi-colpiti/</a></h2>
+    <p class="t">L&#x27;Italia è il settimo Paese più colpito al mondo e il terzo in Europa</p>
+    <div class="prev">
+      <div><p class="lab">Desktop</p><iframe src="paesi-colpiti/" style="width:760px;height:790px" title="L&#x27;Italia è il settimo Paese più colpito al mondo e il terzo in Europa – desktop"></iframe></div>
+      <div><p class="lab">Mobile (360px)</p><iframe src="paesi-colpiti/" style="width:360px;height:1050px" title="L&#x27;Italia è il settimo Paese più colpito al mondo e il terzo in Europa – mobile"></iframe></div>
+    </div>
+    <p class="lab">Snippet per il CMS <button type="button" class="copy">Copia</button></p>
+    <pre>&lt;iframe src=&quot;https://lorenzobuonarosa.github.io/cyberattacchi/paesi-colpiti/&quot; width=&quot;100%&quot; height=&quot;790&quot; frameborder=&quot;0&quot; scrolling=&quot;no&quot; title=&quot;L&#x27;Italia è il settimo Paese più colpito al mondo e il terzo in Europa&quot;&gt;&lt;/iframe&gt;
+&lt;script&gt;
+(function(){if(window.__radarQNv2)return;window.__radarQNv2=1;var O=&quot;https://lorenzobuonarosa.github.io&quot;;var MQ=window.matchMedia(&quot;(prefers-color-scheme:dark)&quot;);function frames(){return Array.prototype.filter.call(document.getElementsByTagName(&quot;iframe&quot;),function(f){return(f.getAttribute(&quot;src&quot;)||&quot;&quot;).indexOf(O+&quot;/&quot;)===0;});}function theme(){var t=document.documentElement.getAttribute(&quot;data-theme&quot;);return t===&quot;dark&quot;||t===&quot;light&quot;?t:(MQ.matches?&quot;dark&quot;:&quot;light&quot;);}function bgOf(el){for(;el&amp;&amp;el.nodeType===1;el=el.parentElement){var c=getComputedStyle(el).backgroundColor;if(c&amp;&amp;c !==&quot;transparent&quot;&amp;&amp;!/rgba\([^)]*,\s*0\)$/.test(c))return c;}return null;}function send(f){try{f.contentWindow.postMessage({sentinel:&quot;radar-qn&quot;,type:&quot;theme&quot;,theme:theme(),bg:bgOf(f.parentElement)},O);}catch(e){}}function sendAll(){frames().forEach(send);}window.addEventListener(&quot;message&quot;,function(e){if(e.origin !==O)return;var d=e.data;if(!d||d.sentinel !==&quot;radar-qn&quot;||d.type !==&quot;height&quot;)return;frames().forEach(function(f){if(f.contentWindow !==e.source)return;var h=Math.ceil(+d.height);if(h &gt; 0&amp;&amp;20000 &gt; h)f.style.height=h+&quot;px&quot;;send(f);});});new MutationObserver(function(){sendAll();setTimeout(sendAll,400);}).observe(document.documentElement,{attributes:true,attributeFilter:[&quot;data-theme&quot;]});if(MQ.addEventListener)MQ.addEventListener(&quot;change&quot;,sendAll);})();
+&lt;/script&gt;</pre>
+    <p class="src">Dati: EuRepoC, dati estratti il 17/11/2026 (data/paesi-colpiti.csv)</p>
+  </section>
+  <section class="item">
+    <h2>5. Attacchi DDoS con disservizi <a href="ddos/">ddos/</a></h2>
+    <p class="t">Gli attacchi DDoS degli hacktivisti fanno sempre meno danni</p>
+    <div class="prev">
+      <div><p class="lab">Desktop</p><iframe src="ddos/" style="width:760px;height:670px" title="Gli attacchi DDoS degli hacktivisti fanno sempre meno danni – desktop"></iframe></div>
+      <div><p class="lab">Mobile (360px)</p><iframe src="ddos/" style="width:360px;height:930px" title="Gli attacchi DDoS degli hacktivisti fanno sempre meno danni – mobile"></iframe></div>
+    </div>
+    <p class="lab">Snippet per il CMS <button type="button" class="copy">Copia</button></p>
+    <pre>&lt;iframe src=&quot;https://lorenzobuonarosa.github.io/cyberattacchi/ddos/&quot; width=&quot;100%&quot; height=&quot;670&quot; frameborder=&quot;0&quot; scrolling=&quot;no&quot; title=&quot;Gli attacchi DDoS degli hacktivisti fanno sempre meno danni&quot;&gt;&lt;/iframe&gt;
+&lt;script&gt;
+(function(){if(window.__radarQNv2)return;window.__radarQNv2=1;var O=&quot;https://lorenzobuonarosa.github.io&quot;;var MQ=window.matchMedia(&quot;(prefers-color-scheme:dark)&quot;);function frames(){return Array.prototype.filter.call(document.getElementsByTagName(&quot;iframe&quot;),function(f){return(f.getAttribute(&quot;src&quot;)||&quot;&quot;).indexOf(O+&quot;/&quot;)===0;});}function theme(){var t=document.documentElement.getAttribute(&quot;data-theme&quot;);return t===&quot;dark&quot;||t===&quot;light&quot;?t:(MQ.matches?&quot;dark&quot;:&quot;light&quot;);}function bgOf(el){for(;el&amp;&amp;el.nodeType===1;el=el.parentElement){var c=getComputedStyle(el).backgroundColor;if(c&amp;&amp;c !==&quot;transparent&quot;&amp;&amp;!/rgba\([^)]*,\s*0\)$/.test(c))return c;}return null;}function send(f){try{f.contentWindow.postMessage({sentinel:&quot;radar-qn&quot;,type:&quot;theme&quot;,theme:theme(),bg:bgOf(f.parentElement)},O);}catch(e){}}function sendAll(){frames().forEach(send);}window.addEventListener(&quot;message&quot;,function(e){if(e.origin !==O)return;var d=e.data;if(!d||d.sentinel !==&quot;radar-qn&quot;||d.type !==&quot;height&quot;)return;frames().forEach(function(f){if(f.contentWindow !==e.source)return;var h=Math.ceil(+d.height);if(h &gt; 0&amp;&amp;20000 &gt; h)f.style.height=h+&quot;px&quot;;send(f);});});new MutationObserver(function(){sendAll();setTimeout(sendAll,400);}).observe(document.documentElement,{attributes:true,attributeFilter:[&quot;data-theme&quot;]});if(MQ.addEventListener)MQ.addEventListener(&quot;change&quot;,sendAll);})();
+&lt;/script&gt;</pre>
+    <p class="src">Dati: ACN, Operational Summary mensili (data/ddos.csv)</p>
+  </section>
+  <section class="item">
+    <h2>6. Gli attacchi che hanno fatto danni in Italia <a href="attacchi-italia/">attacchi-italia/</a></h2>
+    <p class="t">Ospedali, Comuni e fornitori fermi per settimane</p>
+    <div class="prev">
+      <div><p class="lab">Desktop</p><iframe src="attacchi-italia/" style="width:760px;height:500px" title="Ospedali, Comuni e fornitori fermi per settimane – desktop"></iframe></div>
+      <div><p class="lab">Mobile (360px)</p><iframe src="attacchi-italia/" style="width:360px;height:760px" title="Ospedali, Comuni e fornitori fermi per settimane – mobile"></iframe></div>
+    </div>
+    <p class="lab">Snippet per il CMS <button type="button" class="copy">Copia</button></p>
+    <pre>&lt;iframe src=&quot;https://lorenzobuonarosa.github.io/cyberattacchi/attacchi-italia/&quot; width=&quot;100%&quot; height=&quot;500&quot; frameborder=&quot;0&quot; scrolling=&quot;no&quot; title=&quot;Ospedali, Comuni e fornitori fermi per settimane&quot;&gt;&lt;/iframe&gt;
+&lt;script&gt;
+(function(){if(window.__radarQNv2)return;window.__radarQNv2=1;var O=&quot;https://lorenzobuonarosa.github.io&quot;;var MQ=window.matchMedia(&quot;(prefers-color-scheme:dark)&quot;);function frames(){return Array.prototype.filter.call(document.getElementsByTagName(&quot;iframe&quot;),function(f){return(f.getAttribute(&quot;src&quot;)||&quot;&quot;).indexOf(O+&quot;/&quot;)===0;});}function theme(){var t=document.documentElement.getAttribute(&quot;data-theme&quot;);return t===&quot;dark&quot;||t===&quot;light&quot;?t:(MQ.matches?&quot;dark&quot;:&quot;light&quot;);}function bgOf(el){for(;el&amp;&amp;el.nodeType===1;el=el.parentElement){var c=getComputedStyle(el).backgroundColor;if(c&amp;&amp;c !==&quot;transparent&quot;&amp;&amp;!/rgba\([^)]*,\s*0\)$/.test(c))return c;}return null;}function send(f){try{f.contentWindow.postMessage({sentinel:&quot;radar-qn&quot;,type:&quot;theme&quot;,theme:theme(),bg:bgOf(f.parentElement)},O);}catch(e){}}function sendAll(){frames().forEach(send);}window.addEventListener(&quot;message&quot;,function(e){if(e.origin !==O)return;var d=e.data;if(!d||d.sentinel !==&quot;radar-qn&quot;||d.type !==&quot;height&quot;)return;frames().forEach(function(f){if(f.contentWindow !==e.source)return;var h=Math.ceil(+d.height);if(h &gt; 0&amp;&amp;20000 &gt; h)f.style.height=h+&quot;px&quot;;send(f);});});new MutationObserver(function(){sendAll();setTimeout(sendAll,400);}).observe(document.documentElement,{attributes:true,attributeFilter:[&quot;data-theme&quot;]});if(MQ.addEventListener)MQ.addEventListener(&quot;change&quot;,sendAll);})();
+&lt;/script&gt;</pre>
+    <p class="src">Dati: EuRepoC; ACN, Operational Summary mensili (data/attacchi-italia.csv)</p>
+  </section>
+</main>
+<script>
+document.querySelectorAll(".copy").forEach(function (b) {
+  b.addEventListener("click", function () {
+    var t = b.closest(".item").querySelector("pre").textContent;
+    navigator.clipboard.writeText(t).then(function () { b.textContent = "Copiato"; setTimeout(function () { b.textContent = "Copia"; }, 1500); });
+  });
+});
+</script>
+</body>
+</html>

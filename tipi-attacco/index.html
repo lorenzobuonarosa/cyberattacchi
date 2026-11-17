@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tipi di attacchi informatici in Europa – Radar QN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,700&display=swap">
+<link rel="stylesheet" href="../assets/radar.css">
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="../assets/radar.js"></script>
+<style>
+  .bar-name { font-size: 13px; fill: var(--ink); }
+  .bar-name--muted { fill: var(--ink-2); }
+</style>
+</head>
+<body>
+<main class="radar">
+  <header>
+    <h1 class="r-title">Metà degli attacchi sono DDoS, ma i danni li fa il ransomware</h1>
+    <p class="r-sub">Incidenti che hanno colpito l'Unione europea nel 2025, in percentuale</p>
+  </header>
+
+  <div class="r-big" id="big" aria-hidden="true">
+    <span class="r-big__num"><span id="big-num">&nbsp;</span>%</span>
+    <span class="r-big__label">dei casi registrati in Europa sono attacchi DDoS a basso impatto, che rendono irraggiungibile un sito per qualche minuto</span>
+  </div>
+
+  <div id="panels"></div>
+
+  <div class="r-key">
+    <span><i class="sw sw--hatch" style="background:repeating-linear-gradient(135deg,var(--grey-4) 0 2px,var(--bg) 2px 4px);border-color:var(--grey-4)"></i>Valore approssimato, ricavato per differenza</span>
+  </div>
+  <p class="r-note"><b>DDoS</b>: attacchi che sommergono un sito di richieste fino a bloccarlo. <b>Ransomware</b>: software che cifra i dati e li tiene in ostaggio fino al pagamento di un riscatto.</p>
+
+  <footer class="r-foot">
+    <span>Fonte: ENISA, Threat Landscape 2026 (dati 1 gennaio – 31 dicembre 2025)</span>
+    <span>Elaborazione Radar – QN</span>
+  </footer>
+</main>
+
+<script>
+(function () {
+  var R = Radar, fmt = R.fmt;
+  var NOTES = { "Motivazione economica": "ENISA: quasi il 30%" };
+  var DERIVED_NOTE = "Valore ricavato per differenza, ENISA dà percentuali arrotondate";
+
+  Promise.all([R.loadCSV("../data/tipi-attacco.csv"), R.loadCSV("../data/tipi-attacco-riepilogo.csv")]).then(function (res) {
+    var rows = res[0].map(function (r) {
+      return { pannello: r.pannello, voce: r.voce, v: R.num(r.percentuale), der: /^s/i.test(r.ricavato || "") };
+    }).filter(function (d) { return d.v != null; });
+    var ddos = R.num(res[1].find(function (r) { return r.voce === "quota_ddos"; }).valore);
+
+    // ---- Big number ----
+    var bigNum = d3.select("#big-num"), f0 = function (v) { return fmt(v, 0); };
+    if (R.reduced) bigNum.text(f0(ddos));
+    else { bigNum.text(f0(0)); R.onFirstView(document.getElementById("big"), function () { R.countUp(bigNum, ddos, f0, "play"); }); }
+
+    var panels = d3.groups(rows, function (d) { return d.pannello; });
+    var vMax = d3.max(rows, function (d) { return d.v; });
+
+    panels.forEach(function (pn, pi) {
+      var name = pn[0], data = pn[1];
+      var fig = d3.select("#panels").append("figure").attr("class", "r-chart").style("margin-top", pi ? "32px" : "24px");
+      fig.append("p").attr("class", "r-chart__head").text(name);
+      fig.append("p").attr("class", "r-chart__sub").text(pi === 0
+        ? "Motivazione degli incidenti che hanno colpito l'Ue, %"
+        : "Composizione del cybercrime a scopo di lucro, %");
+      var host = fig.node();
+      var tip = R.tooltip(host);
+      var clear = function () {};
+      R.dismissOutside(host, function () { tip.hide(); clear(); });
+
+      function color(d) {
+        if (d.voce === "Ransomware") return "var(--red)";
+        if (d.der) return "url(#hatch-" + pi + ")";
+        return "var(--blue)";
+      }
+
+      R.responsive(host, function (W, phase) {
+        var narrow = R.isNarrow(W);
+        var row = 50, bh = 20, labH = 20;
+        var H = data.length * row;
+        var x = d3.scaleLinear().domain([0, vMax]).range([0, W - 48]);
+
+        d3.select(host).select("svg").remove();
+        var svg = d3.select(host).insert("svg", ".r-tip").attr("width", W).attr("height", H).attr("role", "img")
+          .attr("aria-label", name + ": " + data.map(function (d) { return d.voce + " " + f0(d.v) + "%" + (d.der ? " (valore approssimato)" : ""); }).join(", ") + ".");
+        svg.append("title").text(name);
+        var pat = svg.append("defs").append("pattern").attr("id", "hatch-" + pi).attr("patternUnits", "userSpaceOnUse")
+          .attr("width", 5).attr("height", 5).attr("patternTransform", "rotate(45)");
+        pat.append("rect").attr("width", 5).attr("height", 5).style("fill", "var(--grey-5)");
+        pat.append("rect").attr("width", 2).attr("height", 5).style("fill", "var(--grey-3)");
+        var g = svg.append("g");
+
+        var yy = function (i) { return i * row + labH; };
+        g.append("g").selectAll("text").data(data).join("text")
+          .attr("class", function (d) { return "bar-name mark" + (d.der ? " bar-name--muted" : ""); })
+          .attr("x", 0).attr("y", function (d, i) { return yy(i) - 6; })
+          .style("font-weight", function (d) { return d.voce === "Ransomware" ? 600 : null; })
+          .text(function (d) { return d.voce; });
+
+        var bars = g.append("g").selectAll("path").data(data).join("path").attr("class", "mark")
+          .style("fill", color)
+          .style("stroke", function (d) { return d.der ? "var(--grey-3)" : null; })
+          .style("stroke-width", function (d) { return d.der ? 0.75 : null; })
+          .style("stroke-dasharray", function (d) { return d.der ? "3 2" : null; });
+        R.enter(bars, phase,
+          function (s) { s.attr("d", function (d, i) { return R.barPathH(0, yy(i), 0, bh, 2); }); },
+          function (s) { s.attrTween("d", function (d) { var i = data.indexOf(d); return function (t) { return R.barPathH(0, yy(i), x(d.v) * t, bh, 2); }; }); });
+
+        var vals = g.append("g").selectAll("text").data(data).join("text")
+          .attr("class", function (d) { return "val-label mark" + (d.der ? " val-label--muted" : ""); })
+          .attr("x", function (d) { return x(d.v) + 7; }).attr("y", function (d, i) { return yy(i) + bh / 2; }).attr("dy", "0.35em")
+          .style("fill", function (d) { return d.voce === "Ransomware" ? "var(--red)" : null; });
+        vals.each(function (d) {
+          var s = d3.select(this), pre = d.der ? "≈" : "";
+          R.countUp(s, d.v, function (v) { return pre + f0(v) + "%"; }, phase);
+        });
+
+        clear = function () { g.selectAll(".mark").classed("is-dimmed", false); };
+        g.append("g").selectAll("rect").data(data).join("rect").attr("class", "hit")
+          .attr("x", 0).attr("width", W).attr("y", function (d, i) { return i * row; }).attr("height", row)
+          .on("pointerenter pointerdown", function (ev, d) {
+            g.selectAll(".mark").classed("is-dimmed", function (q) { return q !== d; });
+            var i = data.indexOf(d);
+            var note = d.der ? DERIVED_NOTE : (NOTES[d.voce] || (d.voce === "Ransomware" ? "La minaccia con l'impatto più pesante" : null));
+            tip.show(R.tipHTML({ title: d.voce, value: (d.der ? "≈" : "") + f0(d.v) + "%", unit: pi === 0 ? "degli incidenti" : "del cybercrime a scopo di lucro", note: note }),
+              Math.min(x(d.v), W - 30), yy(i));
+          })
+          .on("pointerleave", function (ev) { if (ev.pointerType === "mouse") { tip.hide(); clear(); } });
+      });
+    });
+  }).catch(function (e) { R.fail("#panels", e); });
+})();
+</script>
+</body>
+</html>
