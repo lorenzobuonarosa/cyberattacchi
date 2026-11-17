@@ -85,15 +85,37 @@
 
     R.responsive(host, function (W, phase) {
       var narrow = R.isNarrow(W);
-      var labW = narrow ? 78 : 132;
-      var totW = narrow ? 24 : 40, totGap = narrow ? 6 : 14;
-      var yearGap = narrow ? 5 : 10, pad = narrow ? 1 : 2;
-      var cw = Math.floor((W - labW - yearGap - totGap - 2 * totW) / months.length);
-      var ch = narrow ? 22 : 26;
-      var gridW = cw * months.length + yearGap;
+      var labW = narrow ? 92 : 132;
+      var ch = narrow ? 24 : 26, pad = narrow ? 1.5 : 2;
+      var headH = 36;   // anni + mesi
 
-      function colX(i) { return labW + i * cw + (months[i].year > years[0] ? yearGap : 0); }
-      var rowsTop = 0, gridH = sectors.length * ch;
+      // blocchi: su desktop uno solo con tutti i mesi (stacco tra gli anni),
+      // su mobile un blocco per anno, il 2025 sopra e il 2026 sotto
+      var blocks;
+      if (narrow) {
+        blocks = years.map(function (y) { return { years: [y], months: months.filter(function (m) { return m.year === y; }) }; });
+      } else {
+        blocks = [{ years: years, months: months }];
+      }
+      var totW = narrow ? 30 : 40, totGap = narrow ? 8 : 14, yearGap = narrow ? 0 : 10;
+      var maxCols = d3.max(blocks, function (bl) { return bl.months.length; });
+      var nTot = narrow ? 1 : years.length;
+      var cw = Math.floor((W - labW - (narrow ? 0 : yearGap) - totGap - nTot * totW) / maxCols);
+      if (!narrow) cw = Math.min(cw, 30);
+      var gridH = sectors.length * ch, blockGap = 22;
+      var blockH = headH + gridH;
+      // posizione di ogni mese: x e blocco
+      var pos = new Map();
+      blocks.forEach(function (bl, bi) {
+        bl.top = bi * (blockH + blockGap);
+        bl.months.forEach(function (m, i) {
+          pos.set(m.key, { x: labW + i * cw + (!narrow && m.year > years[0] ? yearGap : 0), bi: bi });
+        });
+        var last = bl.months[bl.months.length - 1];
+        bl.gridRight = pos.get(last.key).x + cw;
+      });
+      var gridRight = narrow ? labW + maxCols * cw : d3.max(blocks, function (bl) { return bl.gridRight; });
+      var totX0 = gridRight + totGap;
 
       d3.select(host).select("svg").remove();
       var svg = d3.select(host).insert("svg", ".r-tip").attr("width", W).attr("role", "img")
@@ -104,71 +126,68 @@
           sectors.find(function (s) { return s.name === "PA centrale"; }).tot[years[1]] + " nel " + years[1] + ".");
       svg.append("title").text("I tre settori con più vittime di attacchi informatici in Italia, mese per mese");
 
-      var headH = 18 + 18;  // anni + mesi
-      var top = headH;
-      var g = svg.append("g").attr("transform", "translate(0," + top + ")");
-
-      // anni
-      var hd = svg.append("g").attr("transform", "translate(0,12)");
-      years.forEach(function (y) {
-        var idx = months.map(function (m, i) { return m.year === y ? i : -1; }).filter(function (i) { return i >= 0; });
-        var x0 = colX(idx[0]), x1 = colX(idx[idx.length - 1]) + cw;
-        hd.append("text").attr("class", "yr").attr("x", y === years[1] ? (x0 + x1) / 2 : x0).attr("text-anchor", y === years[1] ? "middle" : "start").text(y);
-        hd.append("line").attr("x1", x0).attr("x2", x1 - pad).attr("y1", 5).attr("y2", 5).style("stroke", "var(--ink)").attr("stroke-width", 1);
-      });
-      years.forEach(function (y, k) {
-        hd.append("text").attr("class", "yr").attr("x", labW + gridW + totGap + k * totW + totW / 2).attr("text-anchor", "middle")
-          .text(narrow ? "’" + String(y).slice(2) : y);
-      });
-      // mesi
-      g.append("g").selectAll("text").data(months).join("text").attr("class", "tick-label")
-        .attr("x", function (m, i) { return colX(i) + (cw - pad) / 2; }).attr("y", -6).attr("text-anchor", "middle")
-        .style("font-size", narrow ? "10px" : null)
-        .text(function (m, i) {
-          if (!narrow) return monthShort(m.date);
-          // celle molto strette: un mese sì e uno no
-          return cw < 9 && m.date.getMonth() % 2 ? "" : LETTER[m.date.getMonth()];
+      var cgAll = [];
+      blocks.forEach(function (bl, bi) {
+        var B = svg.append("g").attr("transform", "translate(0," + bl.top + ")");
+        // anni (con riga sotto) e intestazioni dei totali
+        var hd = B.append("g").attr("transform", "translate(0,12)");
+        bl.years.forEach(function (y) {
+          var ms = bl.months.filter(function (m) { return m.year === y; });
+          var x0 = pos.get(ms[0].key).x, x1 = pos.get(ms[ms.length - 1].key).x + cw;
+          hd.append("text").attr("class", "yr").attr("x", x0).text(y);
+          hd.append("line").attr("x1", x0).attr("x2", x1 - pad).attr("y1", 5).attr("y2", 5).style("stroke", "var(--ink)").attr("stroke-width", 1);
         });
-
-      // righe
-      var rowG = g.selectAll("g.row").data(sectors).join("g").attr("class", "row")
-        .attr("transform", function (s, i) { return "translate(0," + (i * ch) + ")"; });
-      rowG.append("text").attr("class", function (s) { return "row-name" + (s.hl ? " hl" : ""); })
-        .attr("x", 0).attr("y", (ch - pad) / 2).attr("dy", "0.35em")
-        .style("font-size", narrow ? "12px" : null)
-        .text(function (s) { return narrow && SHORT[s.name] ? SHORT[s.name] : s.name; });
-
-      // celle vuote e piene
-      var cells = [];
-      sectors.forEach(function (s, r) {
-        months.forEach(function (m, c) { cells.push({ s: s, m: m, r: r, c: c, d: cellOf.get(m.key + "|" + s.name) || null }); });
-      });
-      g.append("g").selectAll("rect").data(cells.filter(function (q) { return !q.d; })).join("rect").attr("class", "cell-empty")
-        .attr("x", function (q) { return colX(q.c); }).attr("y", function (q) { return q.r * ch; })
-        .attr("width", cw - pad).attr("height", ch - pad).attr("rx", 1);
-      var full = cells.filter(function (q) { return q.d; });
-      var cg = g.append("g").selectAll("g").data(full).join("g").attr("class", "mark")
-        .attr("transform", function (q) { return "translate(" + colX(q.c) + "," + (q.r * ch) + ")"; });
-      var rects = cg.append("rect").attr("class", function (q) { return "cell p" + q.d.pos + (q.s.hl ? " hl" : ""); })
-        .attr("width", cw - pad).attr("height", ch - pad).attr("rx", 2);
-      cg.append("text").attr("class", function (q) { return "cnum p" + q.d.pos; })
-        .attr("x", (cw - pad) / 2).attr("y", (ch - pad) / 2).attr("dy", "0.36em")
-        .style("font-size", narrow ? "10px" : null)
-        .text(function (q) { return q.d.pos; });
-      cg.each(function (q) {
-        R.enter(d3.select(this), phase, function (s) { s.style("opacity", 0); }, function (s) { s.style("opacity", 1); }, q.c * (R.DUR / months.length));
-      });
-
-      // totali a destra
-      sectors.forEach(function (s, r) {
-        years.forEach(function (y, k) {
-          var t = g.append("text").attr("class", "tot" + (s.hl ? " hl" : "") + (s.tot[y] ? "" : " zero"))
-            .attr("x", labW + gridW + totGap + k * totW + totW / 2).attr("y", r * ch + (ch - pad) / 2).attr("dy", "0.35em");
-          R.countUp(t, s.tot[y], function (v) { return fmt(v, 0); }, phase, R.DUR * 0.4);
+        (narrow ? bl.years : years).forEach(function (y, k) {
+          if (narrow && bi > 0 && false) return;
+          hd.append("text").attr("class", "yr").attr("x", totX0 + k * totW + totW / 2).attr("text-anchor", "middle")
+            .style("font-size", narrow ? "11px" : null).style("font-weight", narrow ? 600 : null)
+            .text(narrow ? "Tot." : y);
+        });
+        var g = B.append("g").attr("transform", "translate(0," + headH + ")");
+        // mesi
+        g.append("g").selectAll("text").data(bl.months).join("text").attr("class", "tick-label")
+          .attr("x", function (m) { return pos.get(m.key).x + (cw - pad) / 2; }).attr("y", -6).attr("text-anchor", "middle")
+          .style("font-size", narrow ? "11px" : null)
+          .text(function (m) { return cw < 22 ? LETTER[m.date.getMonth()] : monthShort(m.date); });
+        // nomi dei settori
+        g.append("g").selectAll("text").data(sectors).join("text").attr("class", function (s) { return "row-name" + (s.hl ? " hl" : ""); })
+          .attr("x", 0).attr("y", function (s, r) { return r * ch + (ch - pad) / 2; }).attr("dy", "0.35em")
+          .style("font-size", narrow ? "12px" : null)
+          .text(function (s) { return narrow && SHORT[s.name] ? SHORT[s.name] : s.name; });
+        // celle
+        var cells = [];
+        sectors.forEach(function (s, r) {
+          bl.months.forEach(function (m, c) { cells.push({ s: s, m: m, r: r, c: c, d: cellOf.get(m.key + "|" + s.name) || null }); });
+        });
+        g.append("g").selectAll("rect").data(cells.filter(function (q) { return !q.d; })).join("rect").attr("class", "cell-empty")
+          .attr("x", function (q) { return pos.get(q.m.key).x; }).attr("y", function (q) { return q.r * ch; })
+          .attr("width", cw - pad).attr("height", ch - pad).attr("rx", 1);
+        var cg = g.append("g").selectAll("g").data(cells.filter(function (q) { return q.d; })).join("g").attr("class", "mark")
+          .attr("transform", function (q) { return "translate(" + pos.get(q.m.key).x + "," + (q.r * ch) + ")"; });
+        cg.append("rect").attr("class", function (q) { return "cell p" + q.d.pos + (q.s.hl ? " hl" : ""); })
+          .attr("width", cw - pad).attr("height", ch - pad).attr("rx", 2);
+        cg.append("text").attr("class", function (q) { return "cnum p" + q.d.pos; })
+          .attr("x", (cw - pad) / 2).attr("y", (ch - pad) / 2).attr("dy", "0.36em")
+          .text(function (q) { return q.d.pos; });
+        cg.each(function (q) {
+          q.ty = bl.top + headH + q.r * ch;
+          var k = months.indexOf(q.m);
+          R.enter(d3.select(this), phase, function (s) { s.style("opacity", 0); }, function (s) { s.style("opacity", 1); }, k * (R.DUR / months.length));
+        });
+        cgAll.push(cg);
+        // totali a destra
+        sectors.forEach(function (s, r) {
+          (narrow ? bl.years : years).forEach(function (y, k) {
+            var t = g.append("text").attr("class", "tot" + (s.hl ? " hl" : "") + (s.tot[y] ? "" : " zero"))
+              .attr("x", totX0 + k * totW + totW / 2).attr("y", r * ch + (ch - pad) / 2).attr("dy", "0.35em");
+            R.countUp(t, s.tot[y], function (v) { return fmt(v, 0); }, phase, R.DUR * 0.4);
+          });
         });
       });
-
-      svg.attr("height", top + gridH + 2);
+      var cg = d3.selectAll(cgAll.map(function (c) { return c.nodes(); }).flat());
+      function colX(i) { return pos.get(months[i].key).x; }
+      var top = 0;
+      svg.attr("height", blocks[blocks.length - 1].top + blockH + 2);
 
       // ---- interazione ----
       clear = function () { cg.classed("is-dimmed", false); };
@@ -178,7 +197,7 @@
           title: cap(monthLong(q.m.date)) + " · " + q.s.name,
           value: q.d.pos + "°", unit: "posto per numero di vittime",
           note: q.d.nota ? cap(q.d.nota) : null
-        }), colX(q.c) + cw / 2, top + q.r * ch);
+        }), pos.get(q.m.key).x + cw / 2, q.ty);
       }).on("pointerleave", function (ev) { if (ev.pointerType === "mouse") { tip.hide(); clear(); } });
       cg.style("cursor", "pointer");
     });
