@@ -62,7 +62,7 @@
 
     R.responsive(host, function (W, phase) {
       var narrow = R.isNarrow(W);
-      var m = { top: narrow ? 64 : 50, right: 8, bottom: 30, left: 30 };
+      var m = { top: narrow ? 64 : 50, right: 8, bottom: 30, left: 38 };
       var H = narrow ? 360 : 380;
       var w = W - m.left - m.right, h = H - m.top - m.bottom;
       var x = d3.scaleTime().domain([d3.timeMonth.offset(data[0].date, -1), d3.timeMonth.offset(lastD.date, 2)]).range([0, w]);

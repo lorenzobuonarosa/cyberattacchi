@@ -72,7 +72,7 @@
     R.responsive(host, function (W, phase) {
       var narrow = R.isNarrow(W);
       var m = { top: 14, right: narrow ? 52 : 70, bottom: 30, left: 34 };
-      var H = narrow ? 330 : 380;
+      var H = narrow ? 370 : 380;
       var w = W - m.left - m.right, h = H - m.top - m.bottom;
 
       var x = d3.scaleLinear().domain([first.anno, last.anno]).range([0, w]);
@@ -126,16 +126,25 @@
           an.select("path").attr("d", "M" + (bb1.x + 4) + "," + (bb1.y + bb1.height + 4) + "H" + ax + "V" + (ay - 6));
         }
       }
-      // 2) Mondo 2025: testo tra le due linee, a destra
+      // 2) Mondo 2025. Desktop: testo tra le due linee, sopra il punto.
+      //    Mobile: lo spazio tra le linee non basta, il testo va nella fascia libera sotto l'indice 100
+      //    e una linea sale fino al punto.
       var pm = MO.pts[MO.pts.length - 1];
       var mx = x(pm.anno), my = y(pm.idx);
       var t2 = an.append("text").attr("x", mx).attr("y", 0).attr("text-anchor", "end")
         .text("Nel primo semestre 2026 già 4.911 incidenti nel mondo")
-        .call(R.wrap, narrow ? 116 : 150);
+        .call(R.wrap, narrow ? w - 8 : 150);
       var bb2 = t2.node().getBBox();
-      // l'ultima riga del testo poggia 14px sopra il punto
-      t2.attr("transform", "translate(0," + (my - 16 - (bb2.y + bb2.height)) + ")");
-      an.append("line").attr("x1", mx).attr("x2", mx).attr("y1", my - 12).attr("y2", my - 5);
+      if (narrow) {
+        var y100 = y(100), top2 = y100 + 8;
+        t2.attr("transform", "translate(0," + (top2 - bb2.y) + ")");
+        an.append("line").attr("x1", mx).attr("x2", mx).attr("y1", top2 - 3).attr("y2", my + 6);
+        an.append("circle").attr("cx", mx).attr("cy", my + 6).attr("r", 1.75);
+      } else {
+        // l'ultima riga del testo poggia 14px sopra il punto
+        t2.attr("transform", "translate(0," + (my - 16 - (bb2.y + bb2.height)) + ")");
+        an.append("line").attr("x1", mx).attr("x2", mx).attr("y1", my - 12).attr("y2", my - 5);
+      }
       R.enter(an, phase, function (s) { s.style("opacity", 0); }, function (s) { s.style("opacity", 1); }, R.DUR * 0.6);
 
       // ---- linee ----
