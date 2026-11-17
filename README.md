@@ -1,6 +1,6 @@
 # Cyberattacchi in Italia – dataviz Radar QN
 
-Sei dataviz interattive (HTML + D3 v7) per l'articolo di Radar – QN sui cyberattacchi in Italia, da incorporare nel CMS con un iframe. Ogni pagina legge il proprio CSV da `data/`: per aggiornare un grafico basta cambiare il CSV.
+Sette dataviz interattive (HTML + D3 v7) per l'articolo di Radar – QN sui cyberattacchi in Italia, da incorporare nel CMS con un iframe. Ogni pagina legge il proprio CSV da `data/`: per aggiornare un grafico basta cambiare il CSV.
 
 Indice con anteprime desktop e mobile e snippet da copiare: `index.html` (https://lorenzobuonarosa.github.io/cyberattacchi/, quando GitHub Pages sarà attivo dalla root di `main`).
 
@@ -12,6 +12,7 @@ Indice con anteprime desktop e mobile e snippet da copiare: `index.html` (https:
 | 4 | `paesi-colpiti/` | L'Italia è il settimo Paese più colpito al mondo e il terzo in Europa | `data/paesi-colpiti.csv` | EuRepoC, dati estratti il 17/11/2026 |
 | 5 | `ddos/` | Gli attacchi DDoS degli hacktivisti fanno sempre meno danni | `data/ddos.csv` | ACN, Operational Summary mensili |
 | 6 | `attacchi-italia/` | Ospedali, Comuni e fornitori fermi per settimane | `data/attacchi-italia.csv` | EuRepoC; ACN, Operational Summary mensili |
+| 7 | `settori/` | Gli attacchi si spostano dalla pubblica amministrazione alle imprese | `data/settori.csv` | ACN, Operational Summary mensili |
 
 ## Note sui dati e trasformazioni
 
@@ -23,6 +24,7 @@ Indice con anteprime desktop e mobile e snippet da copiare: `index.html` (https:
 4. **Paesi colpiti** – Vista Mondo: i primi 25 Paesi del CSV per numero di attacchi; vista Unione europea: righe con `area = ue`. Posizioni in classifica calcolate dal CSV (Italia 7ª al mondo, 3ª nell'Ue). Area delle bolle proporzionale agli attacchi; la vista Ue usa una scala più grande (indicato nella nota sotto il grafico). Colori: Italia rosso, Ue blu, altri Paesi europei blu chiaro, resto del mondo grigio.
 5. **DDoS** – Punti senza linea di collegamento (dati sporadici e non omogenei). Ogni punto è la quota di attacchi DDoS del mese che hanno causato disservizi. Il mese con `approssimato = sì` (maggio 2026) è un punto vuoto con "≈". La fascia giugno–agosto 2026 non ha dati. Dicembre 2024 (circa 30%, campagna di NoName057(16)) è stato tolto dal grafico e dal CSV su richiesta della redazione.
 6. **Attacchi in Italia** – Carosello a scorrimento orizzontale con aggancio (swipe su mobile, frecce e tastiera su desktop). La parte evidenziata di ogni scheda è la colonna `evidenza`, cercata nel testo di `conseguenza` (se non si trova, la scheda resta senza evidenza).
+7. **Settori** – Righe ordinate per numero totale di presenze nei primi tre (a parità, in ordine alfabetico: Tecnologico e PA locale hanno 11 presenze ciascuno). Totali 2025 e 2026 calcolati dal CSV. Luglio 2026: tre settori a pari merito al 2° posto, tutti mostrati come 2°. La riga del Manifatturiero (1 presenza nel 2025, 8 nel 2026) è in rosso.
 
 ## Snippet per il CMS
 
@@ -35,6 +37,7 @@ Ogni snippet è l'iframe seguito dallo script di `assets/embed.min.js` (inline, 
 <iframe src="https://lorenzobuonarosa.github.io/cyberattacchi/paesi-colpiti/" width="100%" height="790" frameborder="0" scrolling="no" title="L'Italia è il settimo Paese più colpito al mondo e il terzo in Europa"></iframe>
 <iframe src="https://lorenzobuonarosa.github.io/cyberattacchi/ddos/" width="100%" height="670" frameborder="0" scrolling="no" title="Gli attacchi DDoS degli hacktivisti fanno sempre meno danni"></iframe>
 <iframe src="https://lorenzobuonarosa.github.io/cyberattacchi/attacchi-italia/" width="100%" height="500" frameborder="0" scrolling="no" title="Ospedali, Comuni e fornitori fermi per settimane"></iframe>
+<iframe src="https://lorenzobuonarosa.github.io/cyberattacchi/settori/" width="100%" height="710" frameborder="0" scrolling="no" title="Gli attacchi si spostano dalla pubblica amministrazione alle imprese"></iframe>
 ```
 
 Anteprime senza CMS: `?bg=grigio`, `?bg=bianco`, `?bg=nero`, `?bg=notte` nell'URL forzano lo sfondo (e il tema).
