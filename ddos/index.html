@@ -20,7 +20,7 @@
 
   <figure class="r-chart" id="chart"></figure>
   <div class="r-key">
-    <span><i class="sw" style="background:var(--blue);border-radius:50%"></i>Dato ACN</span>
+    <span><i class="sw" style="background:var(--blue);border-radius:50%"></i>% di attacchi DDoS del mese che hanno causato disservizi (rallentamenti o interruzioni)</span>
     <span><i class="sw sw--ring"></i>Valore approssimato («circa»)</span>
     <span><i class="sw" style="background:var(--grey-5)"></i>Nessuna attività DDoS hacktivista</span>
   </div>
@@ -62,17 +62,18 @@
 
     R.responsive(host, function (W, phase) {
       var narrow = R.isNarrow(W);
-      var m = { top: narrow ? 64 : 50, right: 8, bottom: 30, left: 38 };
-      var H = narrow ? 360 : 380;
+      var m = { top: narrow ? 112 : 50, right: 8, bottom: 30, left: 38 };
+      var H = narrow ? 410 : 380;
       var w = W - m.left - m.right, h = H - m.top - m.bottom;
       var x = d3.scaleTime().domain([d3.timeMonth.offset(data[0].date, -1), d3.timeMonth.offset(lastD.date, 2)]).range([0, w]);
-      var y = d3.scaleLinear().domain([0, top.v]).nice().range([h, 0]);
-      var yTicks = y.ticks(narrow ? 3 : 3);
+      var y = d3.scaleLinear().domain([0, top.v]).nice(4).range([h, 0]);
+      var yTicks = y.ticks(4);
 
       d3.select(host).select("svg").remove();
       var svg = d3.select(host).insert("svg", ".r-tip").attr("width", W).attr("height", H).attr("role", "img")
-        .attr("aria-label", "Grafico a punti: la quota di attacchi DDoS contro l'Italia che hanno causato disservizi passa da circa il " +
-          fmt(top.v, top.dec) + "% a " + monthLong(top.date) + " all'" + fmt(lastD.v, lastD.dec) + "% a " + monthLong(lastD.date) +
+        .attr("aria-label", "Grafico a punti: la quota di attacchi DDoS contro l'Italia che hanno causato disservizi è del " +
+          fmt(data[0].v, data[0].dec) + "% a " + monthLong(data[0].date) + ", tocca il " + (top.approx ? "circa " : "") + fmt(top.v, top.dec) + "% a " + monthLong(top.date) +
+          " e scende all'" + fmt(lastD.v, lastD.dec) + "% a " + monthLong(lastD.date) +
           ". Tra giugno e agosto 2026 nessuna attività DDoS hacktivista.");
       svg.append("title").text("Quota di attacchi DDoS contro l'Italia che hanno causato disservizi");
       var g = svg.append("g").attr("transform", "translate(" + m.left + "," + m.top + ")");
@@ -107,14 +108,14 @@
       var gm = g.append("g");
       var stems = gm.selectAll("line").data(data).join("line").attr("class", "mark")
         .attr("x1", function (d) { return x(mid(d.date)); }).attr("x2", function (d) { return x(mid(d.date)); })
-        .attr("y1", h).style("stroke", function (d) { return d === top ? "var(--red)" : "var(--blue)"; })
+        .attr("y1", h).style("stroke", function (d) { return "var(--blue)"; })
         .attr("stroke-width", 1.5).style("opacity", function (d) { return d.approx ? 0.55 : 1; })
         .attr("stroke-dasharray", function (d) { return d.approx ? "2 2" : null; });
       R.enter(stems, phase, function (s) { s.attr("y2", h); }, function (s) { s.attr("y2", function (d) { return y(d.v); }); });
       var dots = gm.selectAll("circle").data(data).join("circle").attr("class", "mark")
         .attr("cx", function (d) { return x(mid(d.date)); }).attr("r", 5)
-        .style("fill", function (d) { return d.approx ? "var(--bg)" : (d === top ? "var(--red)" : "var(--blue)"); })
-        .style("stroke", function (d) { return d === top ? "var(--red)" : (d.approx ? "var(--blue)" : "var(--bg)"); })
+        .style("fill", function (d) { return d.approx ? "var(--bg)" : "var(--blue)"; })
+        .style("stroke", function (d) { return d.approx ? "var(--blue)" : "var(--bg)"; })
         .attr("stroke-width", function (d) { return d.approx ? 2 : 1.5; });
       R.enter(dots, phase, function (s) { s.attr("cy", h); }, function (s) { s.attr("cy", function (d) { return y(d.v); }); });
       // se il punto precedente è troppo vicino, l'etichetta va a destra del punto
@@ -123,7 +124,6 @@
         .attr("text-anchor", function (d) { return side(d) ? "start" : "middle"; })
         .attr("x", function (d) { return x(mid(d.date)) + (side(d) ? 8 : 0); })
         .attr("y", function (d) { return side(d) ? y(d.v) : y(d.v) - 11; }).attr("dy", function (d) { return side(d) ? "0.35em" : null; })
-        .style("fill", function (d) { return d === top ? "var(--red)" : null; })
         .text(vtxt);
       R.enter(vals, phase, function (s) { s.style("opacity", 0); }, function (s) { s.style("opacity", 1); }, R.DUR * 0.7);
 
@@ -140,12 +140,24 @@
       var o = data.find(function (d) { return d.key === OLY.key; });
       if (o) {
         var ox = x(mid(o.date)), oy = y(o.v) - 27;
-        var to = an.append("text").attr("x", ox + 6).attr("y", 0).attr("text-anchor", "end").text(OLY.text).call(R.wrap, narrow ? 150 : 200);
-        var bbo = to.node().getBBox();
-        var ty = y(top.v) - 2 - bbo.y;   // in alto, nello spazio libero sotto la linea del 30%
-        to.attr("transform", "translate(-12," + (ty) + ")");
-        var oBottom = ty + bbo.y + bbo.height;
-        an.append("path").attr("d", "M" + (ox - 6) + "," + (oBottom - 6) + "H" + ox + "V" + oy);
+        if (narrow) {
+          // mobile: nel margine alto, a sinistra dell'annotazione estiva; linea a gomito fino al punto
+          // il testo sta a sinistra di quello estivo, con margine largo (i font possono arrivare dopo la misura)
+          var limit = Math.min(ox - 8, w - bba.width - 22);
+          var to = an.append("text").attr("x", -m.left).attr("y", 0).text(OLY.text).call(R.wrap, Math.min(160, limit + m.left));
+          var bbo = to.node().getBBox();
+          to.attr("transform", "translate(0," + (-m.top + 2 - bbo.y) + ")");
+          // linea: scende dal testo, corre appena sopra l'area del grafico e scende sul punto
+          var lx = -m.left + Math.min(bbo.width, 60) / 2, ly = -10;
+          an.append("path").attr("d", "M" + lx + "," + (-m.top + 2 + bbo.height + 4) + "V" + ly + "H" + ox + "V" + oy);
+        } else {
+          var to = an.append("text").attr("x", ox + 6).attr("y", 0).attr("text-anchor", "end").text(OLY.text).call(R.wrap, 200);
+          var bbo = to.node().getBBox();
+          var ty = y(y.domain()[1]) + 4 - bbo.y;   // in alto, sotto la griglia più alta
+          to.attr("transform", "translate(-12," + (ty) + ")");
+          var oBottom = ty + bbo.y + bbo.height;
+          an.append("path").attr("d", "M" + (ox - 6) + "," + (oBottom - 6) + "H" + ox + "V" + oy);
+        }
       }
       R.enter(an, phase, function (s) { s.style("opacity", 0); }, function (s) { s.style("opacity", 1); }, R.DUR * 0.8);
 

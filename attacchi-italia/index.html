@@ -13,19 +13,23 @@
 <style>
   .deck { position: relative; margin-top: 24px; outline: none; }
   .deck:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
-  /* tutte le schede nella stessa cella: l'altezza è sempre quella della più alta */
-  .track { display: grid; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  /* carosello: scorrimento orizzontale nativo con aggancio (segue il dito, come Instagram).
+     Le schede stanno in una riga flex: l'altezza è sempre quella della più alta. */
+  .track {
+    display: flex; overflow-x: auto; overflow-y: hidden;
+    scroll-snap-type: x mandatory; scroll-behavior: smooth;
+    overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .track::-webkit-scrollbar { display: none; }
   .slide {
-    grid-area: 1 / 1;
+    flex: 0 0 100%; min-width: 0;
+    scroll-snap-align: start; scroll-snap-stop: always;
     display: flex; flex-direction: column;
     border-top: 2px solid var(--ink);
     padding: 16px 0 4px;
-    opacity: 0; visibility: hidden;
-    transform: translateX(24px);
-    transition: opacity 320ms ease, transform 320ms cubic-bezier(.2,.7,.2,1), visibility 0s linear 320ms;
   }
-  .slide.is-before { transform: translateX(-24px); }
-  .slide.is-on { opacity: 1; visibility: visible; transform: none; transition: opacity 320ms ease, transform 320ms cubic-bezier(.2,.7,.2,1), visibility 0s; }
+  .slide + .slide { margin-left: 24px; }
   .s-date { font-size: 13px; color: var(--ink-2); margin: 0 0 6px; font-variant-numeric: tabular-nums; }
   .s-ente { font-family: var(--serif); font-weight: 700; font-size: clamp(22px, 5vw, 27px); line-height: 1.12; margin: 0 0 12px; color: var(--title); text-wrap: balance; }
   .s-tag { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; }
@@ -49,6 +53,10 @@
     font: 600 14px/1 var(--sans); color: var(--on-dark); background: var(--blue);
     border: 0; border-radius: 999px; padding: 10px 16px; cursor: pointer;
   }
+  /* su mobile niente pulsante: un avviso "Scorri" che invita allo swipe */
+  .cover .c-hint { display: none; align-items: center; gap: 8px; font: 600 14px/1 var(--sans); color: var(--ink-2); }
+  .cover .c-hint svg { animation: nudge 1.4s ease-in-out infinite; }
+  @keyframes nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(6px); } }
   .nav { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
   .nav button.arr {
     flex: none; width: 38px; height: 38px; border-radius: 50%;
@@ -62,7 +70,13 @@
   .dots button i { display: block; width: 8px; height: 8px; border-radius: 50%; background: var(--grey-4); transition: background 200ms, transform 200ms; }
   .dots button[aria-current="true"] i { background: var(--red); transform: scale(1.25); }
   .count { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; min-width: 36px; text-align: right; }
-  @media (prefers-reduced-motion: reduce) { .slide, .slide.is-on { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .track { scroll-behavior: auto; } .cover .c-hint svg { animation: none; } }
+  @media (max-width: 519px) {
+    .cover .c-go { display: none; }
+    .cover .c-hint { display: inline-flex; }
+    .nav button.arr { display: none; }
+    .nav { justify-content: center; }
+  }
 </style>
 </head>
 <body>
@@ -73,7 +87,7 @@
   </header>
 
   <section class="deck" id="deck" tabindex="0" aria-roledescription="carosello" aria-label="Attacchi informatici in Italia, schede da sfogliare">
-    <div class="track" id="track" aria-live="polite"></div>
+    <div class="track" id="track"></div>
     <div class="nav">
       <button type="button" class="arr" id="prev" aria-label="Scheda precedente">
         <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -123,6 +137,8 @@
     cover.append("button").attr("type", "button").attr("class", "c-go")
       .html('Scorri <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>')
       .on("click", function () { go(1); });
+    cover.append("p").attr("class", "c-hint")
+      .html('Scorri <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>');
 
     data.forEach(function (d, i) {
       var s = track.append("article").attr("class", "slide").attr("aria-roledescription", "scheda")
@@ -144,20 +160,33 @@
       .on("click", function (ev, s) { go(slides.indexOf(s)); });
     dots.append("i");
 
-    function go(i) {
-      i = Math.max(0, Math.min(N - 1, i));
+    var trackEl = document.getElementById("track");
+    function setUI(i) {
       cur = i;
-      slides.forEach(function (s, k) {
-        s.classList.toggle("is-on", k === i);
-        s.classList.toggle("is-before", k < i);
-        s.setAttribute("aria-hidden", k === i ? "false" : "true");
-      });
-      dots.attr("aria-current", function (s, k) { return String(k === i); }).attr("aria-selected", function (s, k) { return String(k === i); });
+      slides.forEach(function (sl, k) { sl.setAttribute("aria-hidden", k === i ? "false" : "true"); });
+      dots.attr("aria-current", function (sl, k) { return String(k === i); }).attr("aria-selected", function (sl, k) { return String(k === i); });
       d3.select("#prev").property("disabled", i === 0);
       d3.select("#next").property("disabled", i === N - 1);
       d3.select("#count").text(i === 0 ? "" : i + " / " + (N - 1));
     }
-    go(0);
+    function go(i) {
+      i = Math.max(0, Math.min(N - 1, i));
+      trackEl.scrollTo({ left: slides[i].offsetLeft - trackEl.offsetLeft, behavior: R.reduced ? "auto" : "smooth" });
+      setUI(i);
+    }
+    // la scheda attiva segue lo scorrimento (swipe, trackpad, frecce)
+    var raf;
+    trackEl.addEventListener("scroll", function () {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(function () {
+        var x = trackEl.scrollLeft, best = 0, dmin = Infinity;
+        slides.forEach(function (sl, k) { var d = Math.abs(sl.offsetLeft - trackEl.offsetLeft - x); if (d < dmin) { dmin = d; best = k; } });
+        if (best !== cur) setUI(best);
+      });
+    }, { passive: true });
+    // al cambio di larghezza resta sulla scheda corrente
+    window.addEventListener("resize", function () { trackEl.scrollLeft = slides[cur].offsetLeft - trackEl.offsetLeft; });
+    setUI(0);
 
     d3.select("#prev").on("click", function () { go(cur - 1); });
     d3.select("#next").on("click", function () { go(cur + 1); });
@@ -167,18 +196,6 @@
       if (e.key === "ArrowRight") { go(cur + 1); e.preventDefault(); }
       else if (e.key === "ArrowLeft") { go(cur - 1); e.preventDefault(); }
     });
-
-    // swipe
-    var sx = null, sy = null;
-    var tr = document.getElementById("track");
-    tr.addEventListener("pointerdown", function (e) { sx = e.clientX; sy = e.clientY; });
-    tr.addEventListener("pointerup", function (e) {
-      if (sx == null) return;
-      var dx = e.clientX - sx, dy = e.clientY - sy;
-      sx = null;
-      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) go(cur + (dx < 0 ? 1 : -1));
-    });
-    tr.addEventListener("pointercancel", function () { sx = null; });
     R.scheduleHeight();
   }).catch(function (e) { R.fail("#track", e); });
 })();
