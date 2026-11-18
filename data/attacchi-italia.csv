@@ -6,4 +6,4 @@ data;ente;tipo;gruppo;conseguenza;evidenza;fonte
 2024-07;Comune di Fabriano;Ransomware;;Sistemi informatici del Comune fuori uso per settimane;fuori uso per settimane;EuRepoC
 2025-02;Un'azienda del settore energetico;Ransomware;;Interrotti i servizi ai clienti, con disservizi a cascata su altri operatori del settore;disservizi a cascata;ACN, febbraio 2025
 2026-08;Un fornitore di servizi informatici;Ransomware;Titan;Cifrati i dati di un'area condivisa, con impatti sulle organizzazioni clienti che la usavano;impatti sulle organizzazioni clienti;ACN, agosto 2026
-2026-09;Un polo ospedaliero su due sedi;Ransomware;;Chiusa temporaneamente una delle due strutture, limitata la gestione dei pazienti nell'altra. Ingresso probabile da un apparato di rete vulnerabile;Chiusa temporaneamente;ACN, settembre 2026
+2026-08;Policlinico Triestino, casa di cura Salus (Trieste);Ransomware;INC Ransom;Sistemi, telefoni ed email fuori uso dal 31 agosto. La casa di cura Salus si svuota, interventi ed esami sospesi: laboratorio e diagnostica ripartono solo il 14 settembre;La casa di cura Salus si svuota;Il Piccolo, Rai News

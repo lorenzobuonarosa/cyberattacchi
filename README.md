@@ -11,7 +11,7 @@ Indice con anteprime desktop e mobile e snippet da copiare: `index.html` (https:
 | 3 | `provenienza/` | Tre attacchi attribuiti su quattro portano a Russia, Cina, Iran e Corea del Nord | `data/provenienza.csv`, `data/provenienza-riepilogo.csv` | EuRepoC, dati estratti il 17/11/2026 |
 | 4 | `paesi-colpiti/` | L'Italia è il settimo Paese più colpito al mondo e il terzo in Europa | `data/paesi-colpiti.csv` | EuRepoC, dati estratti il 17/11/2026 |
 | 5 | `ddos/` | Gli attacchi DDoS degli hacktivisti fanno sempre meno danni | `data/ddos.csv` | ACN, Operational Summary mensili |
-| 6 | `attacchi-italia/` | Ospedali, Comuni e fornitori fermi per settimane | `data/attacchi-italia.csv` | EuRepoC; ACN, Operational Summary mensili |
+| 6 | `attacchi-italia/` | Ospedali, Comuni e fornitori fermi per settimane | `data/attacchi-italia.csv` | EuRepoC; ACN, Operational Summary mensili; Il Piccolo, Rai News |
 | 7 | `settori/` | Nel 2026 gli attacchi si spostano dalla pubblica amministrazione alle imprese | `data/settori.csv` | ACN, Operational Summary mensili |
 
 ## Note sui dati e trasformazioni
